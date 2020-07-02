@@ -326,12 +326,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   prefab: {fileID: 6956264891214760591, guid: 77afca9b7904dd34291edf97f5c0f156, type: 3}
-  riverMaterial: {fileID: 2100000, guid: 822acab4b9dde4c43982294de0483b29, type: 2}
-  roadMaterial: {fileID: 2100000, guid: 2eb88bac5e977ee46a22743c25d400c1, type: 2}
+  riverPrefab: {fileID: 8968545609573519753, guid: b8d6c4dfd008b0343b9181e181ec1741,
+    type: 3}
+  roadPrefab: {fileID: 7849258118220870130, guid: 58cfbae015cb6424e91ff7d478c1f517,
+    type: 3}
   seed: 0
+  riverBasePoints:
+  - point: {x: 0, y: 0, z: 0}
+    forkedRiverPoints: []
+  - point: {x: 0, y: 0, z: 50}
+    forkedRiverPoints:
+    - point: {x: -50, y: 0, z: 100}
+      forkedRiverPoints: []
+  - point: {x: 50, y: 0, z: 100}
+    forkedRiverPoints: []
   numberOfPoint: 10
-  startPosition: {x: 0, y: 0, z: 0}
-  endPosition: {x: 0, y: 0, z: 50}
   angleRange: 60
   riverWidth: 10
   roadWidth: 4
