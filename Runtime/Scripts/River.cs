@@ -62,6 +62,12 @@ namespace FieldGenerator
 			width = 0;
 		}
 
+		public void SetRoadAlongRiver(Road leftSide, Road rightSide)
+		{
+			leftRoad = leftSide;
+			rightRoad = rightSide;
+		}
+
 		public static void Join(River upstream, River downstream)
 		{
 			List<Vector3> usVertices = upstream.vertices;
@@ -90,11 +96,30 @@ namespace FieldGenerator
 			get => width;
 		}
 
+		public Road LeftRoad
+		{
+			get => leftRoad;
+		}
+
+		public Road RightRoad
+		{
+			get => rightRoad;
+		}
+
+		public List<River> Downstreams
+		{
+			get => downstreams;
+		}
+
 		GameObject gameObject;
 		MeshFilter meshFilter;
 		List<Vector3> vertices = new List<Vector3>();
 		List<int> triangles = new List<int>();
 		List<Vector3> points = new List<Vector3>();
 		float width;
+
+		Road leftRoad;
+		Road rightRoad;
+		List<River> downstreams = new List<River>();
 	}
 }

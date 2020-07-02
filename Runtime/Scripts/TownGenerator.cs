@@ -8,15 +8,11 @@ namespace FieldGenerator
 	{
 		void Awake()
 		{
+			random = new System.Random(seed);
+
 			riverPointsPlacer = new ObjectPlacer("RiverPoints");
 			roadPointsPlacer = new ObjectPlacer("RoadPoints");
 
-			river = new River(Instantiate(riverPrefab));
-
-			roadObject = Instantiate(roadPrefab, transform);
-			roadMeshFilter = roadObject.GetComponent<MeshFilter>();
-
-			random = new System.Random(seed);
 			GenerateTown();
 		}
 
@@ -31,7 +27,7 @@ namespace FieldGenerator
 		void GenerateTown()
 		{
 			GenerateRiver();
-			// GenerateRoad();
+			GenerateRoad();
 		}
 
 		void GenerateRiver()
@@ -112,40 +108,37 @@ namespace FieldGenerator
 		void GenerateRoad()
 		{
 			GenerateRoadAlongRiver();
-			GenerateGridRoad();
+			// GenerateGridRoad();
 		}
 
 		void GenerateRoadAlongRiver()
 		{
+			ClearRoadsAlongRiver();
 			roadPoints.Clear();
-			Vector3 riverDistance = riverPoints[riverPoints.Count - 1] - riverPoints[0];
-			float riverAngle = Mathf.Atan2(riverDistance.x, riverDistance.z) * Mathf.Rad2Deg;
-			Vector3 basePoint = new Vector3(riverWidth / 2 + distanceFromRiverToRoad + roadWidth / 2, 0, 0);
-			basePoint = Quaternion.Euler(0, riverAngle, 0) * basePoint;
-
-			Quaternion reverse = Quaternion.Euler(0, -riverAngle, 0);
-			roadPoints.Add(basePoint + riverPoints[0]);
-			int index = 0;
-			while (index < riverPoints.Count - 1)
+			for (int i0 = 0; i0 < rivers.Count; ++i0)
 			{
-				int relativeIndex = 1;
-				if (index != riverPoints.Count - 2)
-				{
-					Vector3 dist1 = riverPoints[index + 1] - riverPoints[index];
-					dist1 = reverse * dist1;
-					Vector3 dist2 = riverPoints[index + 2] - riverPoints[index];
-					dist2 = reverse * dist2;
-					float angle1 = Mathf.Atan2(dist1.x, dist1.z) * Mathf.Rad2Deg;
-					float angle2 = Mathf.Atan2(dist2.x, dist2.z) * Mathf.Rad2Deg;
-					relativeIndex = angle1 > angle2 ? 1 : 2;
-				}
-				roadPoints.Add(basePoint + riverPoints[index + relativeIndex]);
-				index += relativeIndex;
+				River river = rivers[i0];
+
+				var leftRoad = new Road(Instantiate(roadPrefab));
+				leftRoad.GenerateAlongRiver(river, RiverSide.kLeftSide, roadWidth, distanceFromRiverToRoad);
+				roadPoints.AddRange(leftRoad.Points);
+				roadsAlongRiver.Add(leftRoad);
+
+				var rightRoad = new Road(Instantiate(roadPrefab));
+				rightRoad.GenerateAlongRiver(river, RiverSide.kRightSide, roadWidth, distanceFromRiverToRoad);
+				roadPoints.AddRange(rightRoad.Points);
+				roadsAlongRiver.Add(rightRoad);
 			}
-
 			roadPointsPlacer.PlaceObjects(prefab, roadPoints);
+		}
 
-			roadMeshFilter.sharedMesh = MeshCreator.CreateLineMesh(roadPoints, roadWidth);
+		void ClearRoadsAlongRiver()
+		{
+			for (int i0 = 0; i0 < roadsAlongRiver.Count; ++i0)
+			{
+				roadsAlongRiver[i0].Destroy();
+			}
+			roadsAlongRiver.Clear();
 		}
 
 		void GenerateGridRoad()
@@ -314,6 +307,11 @@ namespace FieldGenerator
 			}
 		}
 
+		public List<List<Vector3>> GetRoadIntersections()
+		{
+			return roadIntersections;
+		}
+
 		[SerializeField]
 		GameObject prefab = default;
 		[SerializeField]
@@ -345,16 +343,16 @@ namespace FieldGenerator
 
 		System.Random random;
 
-		River river;
 		List<River> rivers = new List<River>();
 		List<Vector3> riverPoints = new List<Vector3>();
 
-		GameObject roadObject;
-		MeshFilter roadMeshFilter;
+		List<Road> roadsAlongRiver = new List<Road>();
 		List<Vector3> roadPoints = new List<Vector3>();
 
 		List<GameObject> gridRoadObjects = new List<GameObject>();
 		List<List<Vector3>> parallelRoads = new List<List<Vector3>>();
+
+		List<List<Vector3>> roadIntersections = new List<List<Vector3>>();
 
 		ObjectPlacer riverPointsPlacer;
 		ObjectPlacer roadPointsPlacer;
