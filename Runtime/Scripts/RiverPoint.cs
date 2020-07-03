@@ -4,22 +4,9 @@ using UnityEngine;
 
 namespace FieldGenerator
 {
-	[System.Serializable]
 	public class RiverPoint
 	{
-		public Vector3 Point
-		{
-			get => point;
-		}
-
-		public RiverPoint[] ForkedRiverPoints
-		{
-			get => forkedRiverPoints;
-		}
-
-		[SerializeField]
-		Vector3 point = default;
-		[SerializeField]
-		RiverPoint[] forkedRiverPoints = default;
+		public Vector3 Point { get; set; }
+		public List<RiverPoint> NextPoints { get; set; } = new List<RiverPoint>();
 	}
 }
