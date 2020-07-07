@@ -48,13 +48,13 @@ namespace FieldGenerator
 			}
 
 			rootPoint = new RiverPoint();
-			rootPoint.Point = initialPoint;
+			rootPoint.Position = initialPoint;
 			rootPoint.Width = parameter.Width;
 			step = new Vector3(0, 0, parameter.StepSize);
 
 			Vector3 initialDir = Quaternion.Euler(0, initialAngle, 0) * step;
 
-			points.Add(rootPoint.Point);
+			points.Add(rootPoint.Position);
 
 			GenerateRiverRecursive(rootPoint, initialDir, 1);
 		}
@@ -67,7 +67,7 @@ namespace FieldGenerator
 			float bend = bendability;
 			float angleRange = parameter.AngleRange;
 
-			while (IsInsideField(prevPoint.Point) != false)
+			while (IsInsideField(prevPoint.Position) != false)
 			{
 				++numStep;
 				float prevAngle = Mathf.Atan2(prevDir.x, prevDir.z) * Mathf.Rad2Deg;
@@ -79,11 +79,11 @@ namespace FieldGenerator
 				nextDir = Vector3.Lerp(prevDir, nextDir, bend);
 
 				var nextPoint = new RiverPoint();
-				nextPoint.Point = prevPoint.Point + nextDir;
+				nextPoint.Position = prevPoint.Position + nextDir;
 				nextPoint.Width = parameter.Width;
 				prevPoint.NextPoints.Add(nextPoint);
 
-				points.Add(nextPoint.Point);
+				points.Add(nextPoint.Position);
 
 				if (numStep >= parameter.MinNumStepToBranch)
 				{
@@ -99,14 +99,6 @@ namespace FieldGenerator
 				prevDir = nextDir;
 				prevPoint = nextPoint;
 			}
-		}
-
-		public void Destroy()
-		{
-			Object.Destroy(gameObject);
-			gameObject = null;
-			meshFilter = null;
-			points.Clear();
 		}
 
 		bool IsInsideField(Vector3 pos)
@@ -131,11 +123,6 @@ namespace FieldGenerator
 			return random.Next(0, maxValue) < border;
 		}
 
-		public GameObject GameObject
-		{
-			get => gameObject;
-		}
-
 		public List<Vector3> Points
 		{
 			get => points;
@@ -151,10 +138,6 @@ namespace FieldGenerator
 			get => parameter.Width;
 		}
 
-		GameObject gameObject;
-		MeshFilter meshFilter;
-		List<Vector3> vertices = new List<Vector3>();
-		List<int> triangles = new List<int>();
 		List<Vector3> points = new List<Vector3>();
 
 		System.Random random;

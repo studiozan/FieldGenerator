@@ -6,78 +6,71 @@ namespace FieldGenerator
 {
 	public class Road
 	{
-		public Road(GameObject roadObject)
+		public void Generate(RoadParameter parameter, RiverPoint riverRoot, System.Random random)
 		{
-			gameObject = roadObject;
-			meshFilter = gameObject.GetComponent<MeshFilter>();
+			this.parameter = parameter;
+			this.random = random;
+
+			points.Clear();
+
+			GenerateDistrictRoad();
+			GenerateRoadAlongRiver(riverRoot);
+			GenerateGridRoad();
 		}
 
-		public void GenerateAlongRiver(River river, RiverSide riverSide, float width, float distanceFromRiver)
+		void GenerateDistrictRoad()
 		{
-			points.Clear();
-			List<Vector3> riverPoints = river.Points;
-			float riverWidth = river.Width;
-			Vector3 riverDistance = riverPoints[riverPoints.Count - 1] - riverPoints[0];
-			float riverAngle = Mathf.Atan2(riverDistance.x, riverDistance.z) * Mathf.Rad2Deg;
+			float chunkSize = parameter.ChunkSize;
+			Vector2Int numberOfChunk = parameter.NumberOfChunk;
 
-			float x = riverWidth / 2 + distanceFromRiver + width / 2;
-			System.Func<float, float, bool> isOutside;
-			if (riverSide == RiverSide.kLeftSide)
+			for (int row = 0; row <= numberOfChunk.y; ++row)
 			{
-				isOutside = (a1, a2) => a1 < a2;
-				x *= -1;
+				for (int column = 0; column <= numberOfChunk.x; ++column)
+				{
+					float x = chunkSize * column;
+					float z = chunkSize * row;
+					points.Add(new Vector3(x, 0, z));
+				}
+			}
+		}
+
+		void GenerateRoadAlongRiver(RiverPoint riverRoot)
+		{
+			for (int i0 = 0; i0 < riverRoot.NextPoints.Count; ++i0)
+			{
+				GenerateRoadAlongRiverRecursive(riverRoot, riverRoot.NextPoints[i0]);
+			}
+		}
+
+		void GenerateRoadAlongRiverRecursive(RiverPoint currentPoint, RiverPoint nextPoint)
+		{
+			Vector3 dir = nextPoint.Position - currentPoint.Position;
+			float angle = Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg;
+			Quaternion rotation = Quaternion.Euler(0, angle, 0);
+			float dist = currentPoint.Width / 2 + parameter.DistanceFromRiver + parameter.Width / 2;
+			var leftBase = new Vector3(-dist, 0, 0);
+			var rightBase = new Vector3(dist, 0, 0);
+			Vector3 left = rotation * leftBase + currentPoint.Position;
+			Vector3 right = rotation * rightBase + currentPoint.Position;
+			points.Add(left);
+			points.Add(right);
+
+			if (nextPoint.NextPoints.Count > 0)
+			{
+				for (int i0 = 0; i0 < nextPoint.NextPoints.Count; ++i0)
+				{
+					GenerateRoadAlongRiverRecursive(nextPoint, nextPoint.NextPoints[i0]);
+				}
 			}
 			else
 			{
-				isOutside = (a1, a2) => a1 > a2;
+				points.Add(rotation * leftBase + nextPoint.Position);
+				points.Add(rotation * rightBase + nextPoint.Position);
 			}
-
-			Vector3 basePoint = new Vector3(x, 0, 0);
-			basePoint = Quaternion.Euler(0, riverAngle, 0) * basePoint;
-
-			Quaternion reverse = Quaternion.Euler(0, -riverAngle, 0);
-			points.Add(basePoint + riverPoints[0]);
-			int index = 0;
-			while (index < riverPoints.Count - 1)
-			{
-				int relativeIndex = 1;
-				if (index != riverPoints.Count - 2)
-				{
-					Vector3 dist1 = riverPoints[index + 1] - riverPoints[index];
-					dist1 = reverse * dist1;
-					Vector3 dist2 = riverPoints[index + 2] - riverPoints[index];
-					dist2 = reverse * dist2;
-					float angle1 = Mathf.Atan2(dist1.x, dist1.z) * Mathf.Rad2Deg;
-					float angle2 = Mathf.Atan2(dist2.x, dist2.z) * Mathf.Rad2Deg;
-					relativeIndex = isOutside(angle1, angle2) ? 1 : 2;
-				}
-				points.Add(basePoint + riverPoints[index + relativeIndex]);
-				index += relativeIndex;
-			}
-
-			Mesh mesh = MeshCreator.CreateLineMesh(points, width);
-			mesh.GetVertices(vertices);
-			mesh.GetIndices(triangles, 0);
-			meshFilter.sharedMesh = mesh;
 		}
 
-		public void Destroy()
+		void GenerateGridRoad()
 		{
-			Object.Destroy(gameObject);
-			gameObject = null;
-			meshFilter = null;
-			points.Clear();
-			width = 0;
-		}
-
-		static float CrossVec2(float x1, float y1, float x2, float y2)
-		{
-			return x1 * y2 - y1 * x2;
-		}
-
-		public GameObject GameObject
-		{
-			get => gameObject;
 		}
 
 		public List<Vector3> Points
@@ -85,16 +78,9 @@ namespace FieldGenerator
 			get => points;
 		}
 
-		public float Width
-		{
-			get => width;
-		}
+		System.Random random;
 
-		GameObject gameObject;
-		MeshFilter meshFilter;
-		List<Vector3> vertices = new List<Vector3>();
-		List<int> triangles = new List<int>();
 		List<Vector3> points = new List<Vector3>();
-		float width;
+		RoadParameter parameter;
 	}
 }

@@ -6,7 +6,6 @@ namespace FieldGenerator
 {
 	public class RiverParameter
 	{
-		public GameObject Prefab { get; set; }
 		public Vector2 FieldSize { get; set; }
 		public bool HeadwaterIsOutside { get; set; }
 		public float Width { get; set; }

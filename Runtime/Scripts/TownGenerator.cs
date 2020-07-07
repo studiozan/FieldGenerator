@@ -33,10 +33,9 @@ namespace FieldGenerator
 		{
 			var parameter = new RiverParameter
 			{
-				Prefab = riverPrefab,
-				FieldSize = fieldSize,
+				FieldSize = new Vector2(chunkSize * numberOfChunk.x, chunkSize * numberOfChunk.y),
 				HeadwaterIsOutside = headwaterIsOutside,
-				Width = width,
+				Width = riverWidth,
 				AngleRange = angleRange,
 				StepSize = riverStepSize,
 				BranchingProbability = riverBranchingProb,
@@ -51,66 +50,23 @@ namespace FieldGenerator
 
 		void GenerateRoad()
 		{
-			roadPoints.Clear();
-			RiverPoint riverRoot = river.RootPoint;
-			for (int i0 = 0; i0 < riverRoot.NextPoints.Count; ++i0)
+			var parameter = new RoadParameter
 			{
-				GenerateRoadRecursive(riverRoot, riverRoot.NextPoints[i0]);
-			}
-			roadPointsPlacer.PlaceObjects(prefab, roadPoints);
+				NumberOfChunk = numberOfChunk,
+				ChunkSize = chunkSize,
+				Width = roadWidth,
+				DistanceFromRiver = distanceFromRiver,
+				Spacing = roadSpacing,
+			};
+
+			road.Generate(parameter, river.RootPoint, random);
+
+			roadPointsPlacer.PlaceObjects(prefab, road.Points);
 		}
 
-		void GenerateRoadRecursive(RiverPoint currentPoint, RiverPoint nextPoint)
+		public List<FieldPoint> GetFieldPoints()
 		{
-			Vector3 dir = nextPoint.Point - currentPoint.Point;
-			float angle = Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg;
-			Quaternion rotation = Quaternion.Euler(0, angle, 0);
-			float dist = currentPoint.Width / 2 + distanceFromRiver + roadWidth / 2;
-			var leftBase = new Vector3(-dist, 0, 0);
-			var rightBase = new Vector3(dist, 0, 0);
-			Vector3 left = rotation * leftBase + currentPoint.Point;
-			Vector3 right = rotation * rightBase + currentPoint.Point;
-			roadPoints.Add(left);
-			roadPoints.Add(right);
-
-			if (nextPoint.NextPoints.Count > 0)
-			{
-				for (int i0 = 0; i0 < nextPoint.NextPoints.Count; ++i0)
-				{
-					GenerateRoadRecursive(nextPoint, nextPoint.NextPoints[i0]);
-				}
-			}
-			else
-			{
-				roadPoints.Add(rotation * leftBase + nextPoint.Point);
-				roadPoints.Add(rotation * rightBase + nextPoint.Point);
-			}
-		}
-
-		public List<List<Vector3>> GetRoadIntersections()
-		{
-			return roadIntersections;
-		}
-
-		bool IsInsideField(Vector3 pos)
-		{
-			return pos.x >= 0 && pos.x <= fieldSize.x && pos.z >= 0 && pos.z <= fieldSize.y;
-		}
-
-		bool DetectFromPercent(float percent)
-		{
-			int numDigit = 0;
-			string percentString = percent.ToString();
-			if (percentString.IndexOf(".") > 0)
-			{
-				numDigit = percentString.Split('.')[1].Length;
-			}
-
-			int rate = (int)Mathf.Pow(10, numDigit);
-			int maxValue = 100 * rate;
-			int border = (int)(percent * rate);
-
-			return random.Next(0, maxValue) < border;
+			return fieldPoints;
 		}
 
 		[SerializeField]
@@ -123,11 +79,13 @@ namespace FieldGenerator
 		[SerializeField]
 		int seed = 0;
 		[SerializeField]
-		Vector2 fieldSize = default;
+		float chunkSize = 100;
+		[SerializeField]
+		Vector2Int numberOfChunk = new Vector2Int(10, 10);
 		[SerializeField]
 		bool headwaterIsOutside = true;
 		[SerializeField]
-		float width = 10;
+		float riverWidth = 10;
 		[SerializeField]
 		float angleRange = 60;
 		[SerializeField]
@@ -141,6 +99,8 @@ namespace FieldGenerator
 		float roadWidth = 4;
 		[SerializeField]
 		float distanceFromRiver = 2;
+		[SerializeField]
+		float roadSpacing = 20;
 
 
 
@@ -150,10 +110,10 @@ namespace FieldGenerator
 		float riverStepSize = 10;
 
 
-		List<Vector3> roadPoints = new List<Vector3>();
+		Road road = new Road();
 
 
-		List<List<Vector3>> roadIntersections = new List<List<Vector3>>();
+		List<FieldPoint> fieldPoints = new List<FieldPoint>();
 
 		ObjectPlacer riverPointsPlacer;
 		ObjectPlacer roadPointsPlacer;
