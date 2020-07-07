@@ -24,7 +24,4 @@ public class CheckScr : MonoBehaviour
 
 	[SerializeField]
 	SquareAreaGenerator areaScr = default;
-	
-	[SerializeField]
-	SquareAreaGenerator2 areaScr2 = default;
 }
