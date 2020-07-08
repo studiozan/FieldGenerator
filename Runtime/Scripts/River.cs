@@ -54,7 +54,12 @@ namespace FieldGenerator
 
 			Vector3 initialDir = Quaternion.Euler(0, initialAngle, 0) * step;
 
-			points.Add(rootPoint.Position);
+			var point = new FieldPoint
+			{
+				Position = rootPoint.Position,
+				Type = PointType.kRiver,
+			};
+			points.Add(point);
 
 			GenerateRiverRecursive(rootPoint, initialDir, 1);
 		}
@@ -83,7 +88,12 @@ namespace FieldGenerator
 				nextPoint.Width = parameter.Width;
 				prevPoint.NextPoints.Add(nextPoint);
 
-				points.Add(nextPoint.Position);
+				var point = new FieldPoint
+				{
+					Position = nextPoint.Position,
+					Type = PointType.kRiver,
+				};
+				points.Add(point);
 
 				if (numStep >= parameter.MinNumStepToBranch)
 				{
@@ -123,7 +133,7 @@ namespace FieldGenerator
 			return random.Next(0, maxValue) < border;
 		}
 
-		public List<Vector3> Points
+		public List<FieldPoint> Points
 		{
 			get => points;
 		}
@@ -138,7 +148,7 @@ namespace FieldGenerator
 			get => parameter.Width;
 		}
 
-		List<Vector3> points = new List<Vector3>();
+		List<FieldPoint> points = new List<FieldPoint>();
 
 		System.Random random;
 		RiverPoint rootPoint;

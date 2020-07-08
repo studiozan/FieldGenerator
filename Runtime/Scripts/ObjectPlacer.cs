@@ -21,17 +21,17 @@ namespace FieldGenerator
 			parentObj.name = name;
 		}
 
-		public void PlaceObjects(GameObject prefab, List<Vector3> points)
+		public void PlaceObjects(GameObject prefab, List<FieldPoint> points)
 		{
 			for (int i0 = 0; i0 < points.Count; ++i0)
 			{
 				if (i0 < objects.Count)
 				{
-					objects[i0].transform.position = points[i0];
+					objects[i0].transform.position = points[i0].Position;
 				}
 				else
 				{
-					GameObject obj = Object.Instantiate(prefab, points[i0], Quaternion.identity, parentObj.transform);
+					GameObject obj = Object.Instantiate(prefab, points[i0].Position, Quaternion.identity, parentObj.transform);
 					obj.name = $"Point_{i0}";
 					objects.Add(obj);
 				}

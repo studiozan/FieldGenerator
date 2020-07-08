@@ -44,6 +44,7 @@ namespace FieldGenerator
 			};
 
 			river.Generate(parameter, random);
+			fieldPoints.AddRange(river.Points);
 
 			riverPointsPlacer.PlaceObjects(prefab, river.Points);
 		}
@@ -60,6 +61,7 @@ namespace FieldGenerator
 			};
 
 			road.Generate(parameter, river.RootPoint, random);
+			fieldPoints.AddRange(road.Points);
 
 			roadPointsPlacer.PlaceObjects(prefab, road.Points);
 		}
