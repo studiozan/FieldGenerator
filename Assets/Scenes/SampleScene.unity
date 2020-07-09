@@ -331,22 +331,17 @@ MonoBehaviour:
   roadPrefab: {fileID: 7849258118220870130, guid: 58cfbae015cb6424e91ff7d478c1f517,
     type: 3}
   seed: 0
-  riverBasePoints:
-  - point: {x: 0, y: 0, z: 0}
-    forkedRiverPoints: []
-  - point: {x: 0, y: 0, z: 50}
-    forkedRiverPoints:
-    - point: {x: -50, y: 0, z: 100}
-      forkedRiverPoints: []
-  - point: {x: 50, y: 0, z: 100}
-    forkedRiverPoints: []
-  numberOfPoint: 10
-  angleRange: 60
+  chunkSize: 100
+  numberOfChunk: {x: 5, y: 5}
+  headwaterIsOutside: 1
   riverWidth: 10
+  angleRange: 60
+  riverBranchingProb: 1
+  minNumStepToBranch: 10
+  bendabilityAttenuation: 0.01
   roadWidth: 4
-  distanceFromRiverToRoad: 2
-  roadSpacing: 8
-  numberParallelRoad: 3
+  distanceFromRiver: 2
+  roadSpacing: 20
 --- !u!4 &1426106583
 Transform:
   m_ObjectHideFlags: 0
