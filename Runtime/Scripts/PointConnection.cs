@@ -25,7 +25,10 @@ namespace FieldGenerator
 		}
 
 		/**
-		 * 座標リストを取得して、
+		 * フィールド座標の接続処理をする
+		 * 川と全ての道路とすごろく用道路のリストを作成する。作成するリストは今後増減する可能性がある。
+		 * @param field_list	接続を行うフィールドポイントのリスト
+		 * @param interval		接続を行う座標の間隔
 		 */
 		public void FieldConnectCreate( List<FieldPoint> field_list, float interval)
 		{
