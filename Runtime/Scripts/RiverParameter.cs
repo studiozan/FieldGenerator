@@ -6,10 +6,13 @@ namespace FieldGenerator
 {
 	public class RiverParameter
 	{
-		public Vector3 Start { get; set; }
-		public Vector3 End { get; set; }
-		public int NumberPointBetween { get; set; }
+		public Vector2 FieldSize { get; set; }
+		public bool HeadwaterIsOutside { get; set; }
 		public float Width { get; set; }
 		public float AngleRange { get; set; }
+		public float StepSize { get; set; }
+		public float BranchingProbability { get; set; }
+		public int MinNumStepToBranch { get; set; }
+		public float BendabilityAttenuation { get; set; }
 	}
 }

@@ -4,9 +4,9 @@ using UnityEngine;
 
 namespace FieldGenerator
 {
-	public enum RiverSide
+	public class FieldPoint
 	{
-		kLeftSide,
-		kRightSide,
+		public Vector3 Position { get; set; }
+		public PointType Type { get; set; }
 	}
 }
