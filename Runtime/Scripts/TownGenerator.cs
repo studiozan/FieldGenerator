@@ -9,6 +9,9 @@ namespace FieldGenerator
 		void Awake()
 		{
 			random = new System.Random(seed);
+
+			connection.Initialize();
+
 			riverPointsPlacer = new ObjectPlacer("RiverPoints");
 			roadPointsPlacer = new ObjectPlacer("RoadPoints");
 
@@ -25,15 +28,24 @@ namespace FieldGenerator
 
 		void GenerateTown()
 		{
+			fieldPoints.Clear();
+
 			GenerateRiver();
 			GenerateRoad();
+
+			float interval = Mathf.Max(roadWidth + roadSpacing, riverStepSize);
+			connection.FieldConnectCreate(fieldPoints, interval);
+
+			riverPointsPlacer.PlaceObjects(prefab, connection.GetRiverConnectPointList());
+			roadPointsPlacer.PlaceObjects(prefab, connection.GetRoadConnectPointList());
 		}
 
 		void GenerateRiver()
 		{
 			var parameter = new RiverParameter
 			{
-				FieldSize = new Vector2(chunkSize * numberOfChunk.x, chunkSize * numberOfChunk.y),
+				ChunkSize = chunkSize,
+				NumberOfChunk = numberOfChunk,
 				HeadwaterIsOutside = headwaterIsOutside,
 				Width = riverWidth,
 				AngleRange = angleRange,
@@ -45,8 +57,6 @@ namespace FieldGenerator
 
 			river.Generate(parameter, random);
 			fieldPoints.AddRange(river.Points);
-
-			riverPointsPlacer.PlaceObjects(prefab, river.Points);
 		}
 
 		void GenerateRoad()
@@ -62,8 +72,6 @@ namespace FieldGenerator
 
 			road.Generate(parameter, river.RootPoint, random);
 			fieldPoints.AddRange(road.Points);
-
-			roadPointsPlacer.PlaceObjects(prefab, road.Points);
 		}
 
 		public List<FieldPoint> GetFieldPoints()
@@ -71,12 +79,25 @@ namespace FieldGenerator
 			return fieldPoints;
 		}
 
+		public List<FieldConnectPoint> GetRiverConnectPointList()
+		{
+			return connection.GetRiverConnectPointList();
+		}
+
+		public List<FieldConnectPoint> GetRoadConnectPointList()
+		{
+			return connection.GetRoadConnectPointList();
+		}
+
+		public List<FieldConnectPoint> GetSugorokuConnectPointList()
+		{
+			return connection.GetSugorokuConnectPointList();
+		}
+
+
+
 		[SerializeField]
 		GameObject prefab = default;
-		[SerializeField]
-		GameObject riverPrefab = default;
-		[SerializeField]
-		GameObject roadPrefab = default;
 
 		[SerializeField]
 		int seed = 0;
@@ -116,6 +137,8 @@ namespace FieldGenerator
 
 
 		List<FieldPoint> fieldPoints = new List<FieldPoint>();
+
+		PointConnection connection = new PointConnection();
 
 		ObjectPlacer riverPointsPlacer;
 		ObjectPlacer roadPointsPlacer;

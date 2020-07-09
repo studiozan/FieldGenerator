@@ -11,7 +11,9 @@ namespace FieldGenerator
 			this.parameter = parameter;
 			this.random = random;
 			points.Clear();
-			Vector2 fieldSize = parameter.FieldSize;
+			float chunkSize = parameter.ChunkSize;
+			Vector2 numberOfChunk = parameter.NumberOfChunk;
+			var fieldSize = new Vector2(chunkSize * numberOfChunk.x, chunkSize * numberOfChunk.y);
 			Vector3 initialPoint = Vector3.zero;
 			initialPoint.x = fieldSize.x * (float)random.NextDouble();
 			initialPoint.z = fieldSize.y * (float)random.NextDouble();
@@ -50,7 +52,7 @@ namespace FieldGenerator
 			rootPoint = new RiverPoint();
 			rootPoint.Position = initialPoint;
 			rootPoint.Width = parameter.Width;
-			step = new Vector3(0, 0, parameter.StepSize);
+			var step = new Vector3(0, 0, parameter.StepSize);
 
 			Vector3 initialDir = Quaternion.Euler(0, initialAngle, 0) * step;
 
@@ -69,23 +71,29 @@ namespace FieldGenerator
 			RiverPoint prevPoint = riverPoint;
 			Vector3 prevDir = dir;
 			int numStep = 0;
+			int totalStep = 0;
 			float bend = bendability;
 			float angleRange = parameter.AngleRange;
+			float width = parameter.Width;
+
+			Quaternion nextRotation = Quaternion.identity;
 
 			while (IsInsideField(prevPoint.Position) != false)
 			{
 				++numStep;
+				++totalStep;
 				float prevAngle = Mathf.Atan2(prevDir.x, prevDir.z) * Mathf.Rad2Deg;
 				float angle = angleRange * (float)random.NextDouble() - angleRange / 2;
 				angle += prevAngle;
 
+				var step = new Vector3(0, 0, parameter.StepSize);
 				Vector3 nextDir = Quaternion.Euler(0, angle, 0) * step;
 				bend *= (1.0f - parameter.BendabilityAttenuation);
 				nextDir = Vector3.Lerp(prevDir, nextDir, bend);
 
 				var nextPoint = new RiverPoint();
 				nextPoint.Position = prevPoint.Position + nextDir;
-				nextPoint.Width = parameter.Width;
+				nextPoint.Width = width;
 				prevPoint.NextPoints.Add(nextPoint);
 
 				var point = new FieldPoint
@@ -94,6 +102,15 @@ namespace FieldGenerator
 					Type = PointType.kRiver,
 				};
 				points.Add(point);
+
+				//vertices---------------------------
+				float nextAngle = Mathf.Atan2(nextDir.x, nextDir.z) * Mathf.Rad2Deg;
+				nextRotation = Quaternion.Euler(0, nextAngle, 0);
+				Vector3 left = nextRotation * new Vector3(-width / 2, 0, 0) + prevPoint.Position;
+				Vector3 right = nextRotation * new Vector3(width / 2, 0, 0) + prevPoint.Position;
+				vertices.Add(left);
+				vertices.Add(right);
+				//-----------------------------------
 
 				if (numStep >= parameter.MinNumStepToBranch)
 				{
@@ -109,11 +126,23 @@ namespace FieldGenerator
 				prevDir = nextDir;
 				prevPoint = nextPoint;
 			}
+
+			//vertices---------------------------
+			if (totalStep != 0)
+			{
+				Vector3 left = nextRotation * new Vector3(-width / 2, 0, 0) + prevPoint.Position;
+				Vector3 right = nextRotation * new Vector3(width / 2, 0, 0) + prevPoint.Position;
+				vertices.Add(left);
+				vertices.Add(right);
+			}
+			//-----------------------------------
 		}
 
 		bool IsInsideField(Vector3 pos)
 		{
-			Vector2 fieldSize = parameter.FieldSize;
+			float chunkSize = parameter.ChunkSize;
+			Vector2Int numberOfChunk = parameter.NumberOfChunk;
+			var fieldSize = new Vector2(chunkSize * numberOfChunk.x, chunkSize * numberOfChunk.y);
 			return pos.x >= 0 && pos.x <= fieldSize.x && pos.z >= 0 && pos.z <= fieldSize.y;
 		}
 
@@ -133,6 +162,14 @@ namespace FieldGenerator
 			return random.Next(0, maxValue) < border;
 		}
 
+		Vector2Int GetChunk(Vector3 pos)
+		{
+			float chunkSize = parameter.ChunkSize;
+			int x = (int)(pos.x / chunkSize);
+			int y = (int)(pos.z / chunkSize);
+			return new Vector2Int(x, y);
+		}
+
 		public List<FieldPoint> Points
 		{
 			get => points;
@@ -148,11 +185,14 @@ namespace FieldGenerator
 			get => parameter.Width;
 		}
 
-		List<FieldPoint> points = new List<FieldPoint>();
-
 		System.Random random;
+
+		List<FieldPoint> points = new List<FieldPoint>();
 		RiverPoint rootPoint;
 		RiverParameter parameter;
-		Vector3 step;
+
+		List<Vector3> vertices = new List<Vector3>();
+
+		List<Vector2Int> chunks = new List<Vector2Int>();
 	}
 }
