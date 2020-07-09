@@ -13,7 +13,9 @@ namespace FieldGenerator
 			connection.Initialize();
 
 			riverPointsPlacer = new ObjectPlacer("RiverPoints");
-			roadPointsPlacer = new ObjectPlacer("RoadPoints");
+			districtRoadPointPlacer = new ObjectPlacer("DistrictRoadPoints");
+			roadAlongRiverPointPlacer = new ObjectPlacer("RoadAlongRiverPointPlacer");
+			gridRoadPointPlacer = new ObjectPlacer("GridRoadPointPlacer");
 
 			GenerateTown();
 		}
@@ -36,8 +38,10 @@ namespace FieldGenerator
 			float interval = Mathf.Max(roadWidth + roadSpacing, riverStepSize);
 			connection.FieldConnectCreate(fieldPoints, interval);
 
-			riverPointsPlacer.PlaceObjects(prefab, connection.GetRiverConnectPointList());
-			roadPointsPlacer.PlaceObjects(prefab, connection.GetRoadConnectPointList());
+			riverPointsPlacer.PlaceObjects(riverPointPrefab, river.Points);
+			districtRoadPointPlacer.PlaceObjects(districtRoadPointPrefab, road.DistrictRoadPoints);
+			roadAlongRiverPointPlacer.PlaceObjects(roadAlongRiverPointPrefab, road.RoadAlongRiverPoints);
+			gridRoadPointPlacer.PlaceObjects(gridRoadPointPrefab, road.GridRoadPoints);
 		}
 
 		void GenerateRiver()
@@ -70,7 +74,7 @@ namespace FieldGenerator
 				Spacing = roadSpacing,
 			};
 
-			road.Generate(parameter, river.RootPoint, random);
+			road.Generate(parameter, river, random);
 			fieldPoints.AddRange(road.Points);
 		}
 
@@ -97,7 +101,13 @@ namespace FieldGenerator
 
 
 		[SerializeField]
-		GameObject prefab = default;
+		GameObject riverPointPrefab = default;
+		[SerializeField]
+		GameObject districtRoadPointPrefab = default;
+		[SerializeField]
+		GameObject roadAlongRiverPointPrefab = default;
+		[SerializeField]
+		GameObject gridRoadPointPrefab = default;
 
 		[SerializeField]
 		int seed = 0;
@@ -141,6 +151,8 @@ namespace FieldGenerator
 		PointConnection connection = new PointConnection();
 
 		ObjectPlacer riverPointsPlacer;
-		ObjectPlacer roadPointsPlacer;
+		ObjectPlacer districtRoadPointPlacer;
+		ObjectPlacer roadAlongRiverPointPlacer;
+		ObjectPlacer gridRoadPointPlacer;
 	}
 }

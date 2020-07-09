@@ -11,6 +11,7 @@ namespace FieldGenerator
 			this.parameter = parameter;
 			this.random = random;
 			points.Clear();
+			vertices.Clear();
 			float chunkSize = parameter.ChunkSize;
 			Vector2 numberOfChunk = parameter.NumberOfChunk;
 			var fieldSize = new Vector2(chunkSize * numberOfChunk.x, chunkSize * numberOfChunk.y);
@@ -162,6 +163,62 @@ namespace FieldGenerator
 			return random.Next(0, maxValue) < border;
 		}
 
+		public bool Contain(Vector3 pos)
+		{
+			bool isInside = false;
+
+			for (int i0 = 0; i0 < points.Count - 1; ++i0)
+			{
+				int baseIndex = i0 * 2;
+				Vector3 v1 = vertices[baseIndex];
+				Vector3 v2 = vertices[baseIndex + 2];
+				Vector3 v3 = vertices[baseIndex + 3];
+				Vector3 v4 = vertices[baseIndex + 1];
+
+				if (IsInsideQuadrangle(v1, v2, v3, v4, pos) != false)
+				{
+					isInside = true;
+					break;
+				}
+			}
+
+			return isInside;
+		}
+
+		bool IsInsideQuadrangle(Vector3 v1, Vector3 v2, Vector3 v3, Vector3 v4, Vector3 pos)
+		{
+			bool isInside = true;
+
+			Vector3[] verts = { v1, v2, v3, v4 };
+			float sign = 0;
+			for (int i0 = 0; i0 < verts.Length; ++i0)
+			{
+				Vector3 v = verts[(i0 + 1) % verts.Length] - verts[i0];
+				Vector3 p = pos - verts[i0];
+				float cross = CrossVec2(v.x, v.z, p.x, p.z);
+				cross = Mathf.Approximately(cross, 0) != false ? 0 : cross;
+				if (Mathf.Approximately(sign, 0) != false)
+				{
+					sign = cross;
+				}
+				else
+				{
+					if (sign * cross < 0)
+					{
+						isInside = false;
+						break;
+					}
+				}
+			}
+
+			return isInside;
+		}
+
+		float CrossVec2(float x1, float y1, float x2, float y2)
+		{
+			return x1 * y2 - y1 * x2;
+		}
+
 		Vector2Int GetChunk(Vector3 pos)
 		{
 			float chunkSize = parameter.ChunkSize;
@@ -192,7 +249,5 @@ namespace FieldGenerator
 		RiverParameter parameter;
 
 		List<Vector3> vertices = new List<Vector3>();
-
-		List<Vector2Int> chunks = new List<Vector2Int>();
 	}
 }
