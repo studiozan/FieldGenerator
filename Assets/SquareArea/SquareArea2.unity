@@ -505,6 +505,7 @@ MonoBehaviour:
   ObjectTbl:
   - {fileID: 3226630355585294126, guid: 302d9a7ef8a6e824d84cd215b9b274a3, type: 3}
   - {fileID: 1814401110376950433, guid: fdbc2becd3bad5e47b53d9d8dd7fef5a, type: 3}
+  - {fileID: 951306801054749936, guid: bda6208915788d846897e0abfd2b27b5, type: 3}
 --- !u!4 &1438464755
 Transform:
   m_ObjectHideFlags: 0

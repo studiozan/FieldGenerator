@@ -12,6 +12,7 @@ namespace SugorokuMap
 		{
 			PointTypeList = new List<int>();
 			SugorokuPointList = new List<FieldConnectPoint>();
+			SugorokuDataList = new List<int>();
 			ObjectList = new List<GameObject>();
 
 			RandomSystem = new System.Random();
@@ -34,6 +35,7 @@ namespace SugorokuMap
 			}
 
 			SugorokuPointList.Clear();
+			SugorokuDataList.Clear();
 			tmp_point = new FieldConnectPoint();
 			// スタート地点
 			idx = 0;
@@ -42,10 +44,11 @@ namespace SugorokuMap
 			PointTypeList[ idx] = 1;
 			tmp_list.Add( tmp_point);
 			enable_list.Add( tmp_point);
+			SugorokuDataList.Add( 0);
 
 			while( enable_list.Count > 0)
 			{
-				PassCreate( PointList, tmp_list, enable_list, PointTypeList, 2);
+				PassCreate( PointList, tmp_list, enable_list, PointTypeList, 3);
 				count++;
 				if( count > 25)
 				{
@@ -55,7 +58,8 @@ namespace SugorokuMap
 
 			SugorokuPointList = tmp_list;
 
-			int i0, i1;
+			/*! デバッグ用の見た目オブジェクトの生成 */
+			int i0, i1, tmp_i;
 			List<Vector2> vec_list = new List<Vector2>();
 			FieldConnectPoint tmp_point2;
 			GameObject obj, mass_obj;
@@ -70,7 +74,15 @@ namespace SugorokuMap
 			for( i0 = 0; i0 < tmp_list.Count; i0++)
 			{
 				tmp_point = tmp_list[ i0];
-				mass_obj = Instantiate( ObjectTbl[ 0]) as GameObject;
+				if( SugorokuDataList[ i0] == 0)
+				{
+					tmp_i = 0;
+				}
+				else
+				{
+					tmp_i = 2;
+				}
+				mass_obj = Instantiate( ObjectTbl[ tmp_i]) as GameObject;
 				mass_obj.transform.localPosition = tmp_point.Position;
 				mass_obj.transform.localScale = new Vector3( 7.5f, 1f, 7.5f);
 				mass_obj.transform.parent = gameObject.transform;
@@ -92,6 +104,26 @@ namespace SugorokuMap
 			State = 2;
 
 			return true;
+		}
+
+		void Check()
+		{
+			int i0, i1;
+			FieldConnectPoint tmp_point;
+
+			for( i0 = 0; i0 < SugorokuPointList.Count; i0++)
+			{
+				SugorokuPointList[i0].Index = i0;
+			}
+
+			for( i0 = 0; i0 < SugorokuPointList.Count; i0++)
+			{
+				for( i1 = 0; i1 < SugorokuPointList[ i0].ConnectionList.Count; i1++)
+				{
+					tmp_point = SugorokuPointList[ i0].ConnectionList[ i1];
+					Debug.Log($"[{i0}][{i1}] index:[{tmp_point.Index}]");
+				}
+			}
 		}
 
 		/**
@@ -151,6 +183,7 @@ namespace SugorokuMap
 					enable_list[ idx].SetConnection( tmp_point2);
 					enable_list.Add( tmp_point2);
 					save_list.Add( tmp_point2);
+					SugorokuDataList.Add( 0);
 
 					pass_num--;
 					if( pass_num <= 0)
@@ -259,6 +292,7 @@ namespace SugorokuMap
 
 			if( flg != false)
 			{
+				SugorokuDataList[ SugorokuDataList.Count - 1] = 1;
 				/*! 新しいマス3つを生成する */
 				for( i0 = 0; i0 < 3; i0++)
 				{
@@ -270,6 +304,7 @@ namespace SugorokuMap
 					enable_list.Add( field_tbl[ i0]);
 					use_type_list[ field_tbl[ i0].Index] = 1;
 					room_mass_list.Add( field_tbl[ i0]);
+					SugorokuDataList.Add( 1);
 				}
 				/*! 新しく生成したマスを相互に接続する */
 				field_tbl[ 0].SetConnection( center_point);
@@ -341,6 +376,7 @@ namespace SugorokuMap
 			enable_list.Add( tmp_point);
 			room_list.Add( tmp_point);
 			save_list.Add( tmp_point);
+			SugorokuDataList.Add( 1);
 			use_type_list[ tmp_point.Index] = 1;
 
 			/* 伸ばしたマスからさらに伸ばした時に、部屋と繋がるマスがあるかどうか調べる */
@@ -375,6 +411,7 @@ namespace SugorokuMap
 			enable_list.Add( tmp_point2);
 			room_list.Add( tmp_point2);
 			save_list.Add( tmp_point2);
+			SugorokuDataList.Add( 1);
 			use_type_list[ tmp_point2.Index] = 1;
 		 }
 
@@ -392,6 +429,11 @@ namespace SugorokuMap
 			return SugorokuPointList;
 		}
 
+		/**
+		 * 元になる座標リストの設定
+		 * 
+		 * @param list	元になる座標リスト
+		 */
 		public void SetPointList( List<FieldConnectPoint> list)
 		{
 			int i0;
@@ -409,6 +451,7 @@ namespace SugorokuMap
 
 		List<FieldConnectPoint> PointList;				/*! 道路の繋がりポイントリスト */
 		List<FieldConnectPoint> SugorokuPointList;		/*! すごろく用ポイントリスト */
+		List<int> SugorokuDataList;			/*! すごろくマスの情報リスト */
 		List<int> PointTypeList;			/*! ポイントの使用状況リスト */
 		List<GameObject> ObjectList;		/*! 表示に使っているオブジェクトのリスト */
 
