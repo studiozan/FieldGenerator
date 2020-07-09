@@ -72,5 +72,12 @@ namespace FieldGenerator
 			get;
 			private set;
 		}
+
+		//! リストのインデックス
+		public int Index
+		{
+			get;
+			set;
+		}
 	}
 }
