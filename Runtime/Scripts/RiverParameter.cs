@@ -6,7 +6,8 @@ namespace FieldGenerator
 {
 	public class RiverParameter
 	{
-		public Vector2 FieldSize { get; set; }
+		public float ChunkSize { get; set; }
+		public Vector2Int NumberOfChunk { get; set; }
 		public bool HeadwaterIsOutside { get; set; }
 		public float Width { get; set; }
 		public float AngleRange { get; set; }

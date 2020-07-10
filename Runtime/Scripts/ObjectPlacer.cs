@@ -21,7 +21,7 @@ namespace FieldGenerator
 			parentObj.name = name;
 		}
 
-		public void PlaceObjects(GameObject prefab, List<FieldPoint> points)
+		public void PlaceObjects<T>(GameObject prefab, List<T> points) where T : FieldPoint
 		{
 			for (int i0 = 0; i0 < points.Count; ++i0)
 			{
