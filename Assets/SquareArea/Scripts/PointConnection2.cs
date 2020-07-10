@@ -34,7 +34,10 @@ namespace FieldGenerator
 			/* すごろく用に繋がっている部分のポリゴンを生成 */
 			ObjectCreate( TownScript.GetSugorokuConnectPointList());
 
-			SugorokuScript.SetPointList( GetSugorokuList());
+			if( SugorokuScript != null)
+			{
+				SugorokuScript.SetPointList( GetSugorokuList());
+			}
 		}
 
 		public List<FieldConnectPoint> GetSugorokuList()

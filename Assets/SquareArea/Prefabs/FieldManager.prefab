@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 4935998598909745946}
   - component: {fileID: 4935998598909745947}
   m_Layer: 0
-  m_Name: manager
+  m_Name: FieldManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -43,10 +43,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: feb7e8efdd9280f44b6672b1fcb6574e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  prefab: {fileID: 6956264891214760591, guid: 77afca9b7904dd34291edf97f5c0f156, type: 3}
-  riverPrefab: {fileID: 8968545609573519753, guid: b8d6c4dfd008b0343b9181e181ec1741,
+  riverPointPrefab: {fileID: 8968545609573519753, guid: b8d6c4dfd008b0343b9181e181ec1741,
     type: 3}
-  roadPrefab: {fileID: 7849258118220870130, guid: 58cfbae015cb6424e91ff7d478c1f517,
+  districtRoadPointPrefab: {fileID: 7849258118220870130, guid: 58cfbae015cb6424e91ff7d478c1f517,
+    type: 3}
+  roadAlongRiverPointPrefab: {fileID: 7849258118220870130, guid: 58cfbae015cb6424e91ff7d478c1f517,
+    type: 3}
+  gridRoadPointPrefab: {fileID: 7849258118220870130, guid: 58cfbae015cb6424e91ff7d478c1f517,
     type: 3}
   seed: 0
   chunkSize: 100

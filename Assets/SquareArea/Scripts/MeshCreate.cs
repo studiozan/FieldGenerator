@@ -277,5 +277,65 @@ namespace SquareArea
 
 			return width;
 		}
+
+		/**
+		 * 渡された頂点情報からポリゴンを生成する
+		 */
+		 public void VectorPolygonCreate( List<Vector3> vec_list, List<Vector2> uv_list)
+		 {
+			int i0;
+			var mesh = new Mesh();
+			List<Vector3> vert = new List<Vector3>();
+			List<int> tri = new List<int>();
+			List<Vector2> uvs = new List<Vector2>();
+			Vector2 tmp_uv;
+
+			/*! 頂点座標 */
+			mesh.SetVertices( vec_list);
+
+			/*! 頂点情報 */
+			for( i0 = 0; i0 < vec_list.Count; i0++)
+			{
+				tri.Add( i0);
+			}
+			mesh.SetTriangles( tri, 0);
+
+#if false
+			/*! UV情報 */
+			for( i0 = 0; i0 < vec_list.Count; i0++)
+			{
+				switch( (i0%3))
+				{
+				case 0:
+					tmp_uv = Vector2.zero;
+					break;
+				case 1:
+					tmp_uv = Vector2.up;
+					break;
+				case 2:
+					tmp_uv = Vector2.right;
+					break;
+				default:
+					tmp_uv = Vector2.zero;
+					break;
+				}
+				uvs.Add( tmp_uv);
+			}
+			mesh.SetUVs( 0, tmp_uv);
+#else
+			mesh.SetUVs( 0, uv_list);
+#endif
+			List<Color> color_list = new List<Color>();
+			Color tmp_color;
+			for( i0 = 0; i0 < vec_list.Count; i0++)
+			{
+				tmp_color = Color.red;
+			}
+			mesh.SetColors( color_list);
+
+			mesh.RecalculateNormals();
+			var filter = GetComponent<MeshFilter>();
+			filter.sharedMesh = mesh;
+		 }
 	}
 }
