@@ -288,7 +288,6 @@ namespace SquareArea
 			List<Vector3> vert = new List<Vector3>();
 			List<int> tri = new List<int>();
 			List<Vector2> uvs = new List<Vector2>();
-			Vector2 tmp_uv;
 
 			/*! 頂点座標 */
 			mesh.SetVertices( vec_list);
@@ -300,31 +299,7 @@ namespace SquareArea
 			}
 			mesh.SetTriangles( tri, 0);
 
-#if false
-			/*! UV情報 */
-			for( i0 = 0; i0 < vec_list.Count; i0++)
-			{
-				switch( (i0%3))
-				{
-				case 0:
-					tmp_uv = Vector2.zero;
-					break;
-				case 1:
-					tmp_uv = Vector2.up;
-					break;
-				case 2:
-					tmp_uv = Vector2.right;
-					break;
-				default:
-					tmp_uv = Vector2.zero;
-					break;
-				}
-				uvs.Add( tmp_uv);
-			}
-			mesh.SetUVs( 0, tmp_uv);
-#else
 			mesh.SetUVs( 0, uv_list);
-#endif
 			List<Color> color_list = new List<Color>();
 			Color tmp_color;
 			for( i0 = 0; i0 < vec_list.Count; i0++)
