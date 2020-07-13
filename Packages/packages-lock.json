@@ -6,6 +6,12 @@
       "source": "local",
       "dependencies": {}
     },
+    "com.studiozan.polygongenerator": {
+      "version": "file:../../PolygonGenerator",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {}
+    },
     "com.unity.collab-proxy": {
       "version": "1.2.16",
       "depth": 0,
