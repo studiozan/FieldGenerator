@@ -16,7 +16,10 @@ namespace FieldGenerator
 			districtRoadPointPlacer = new ObjectPlacer("DistrictRoadPoints");
 			roadAlongRiverPointPlacer = new ObjectPlacer("RoadAlongRiverPointPlacer");
 			gridRoadPointPlacer = new ObjectPlacer("GridRoadPointPlacer");
+		}
 
+		void Start()
+		{
 			GenerateTown();
 		}
 
@@ -42,6 +45,8 @@ namespace FieldGenerator
 			districtRoadPointPlacer.PlaceObjects(districtRoadPointPrefab, road.DistrictRoadPoints);
 			roadAlongRiverPointPlacer.PlaceObjects(roadAlongRiverPointPrefab, road.RoadAlongRiverPoints);
 			gridRoadPointPlacer.PlaceObjects(gridRoadPointPrefab, road.GridRoadPoints);
+
+			OnGenerate?.Invoke();
 		}
 
 		void GenerateRiver()
@@ -97,6 +102,18 @@ namespace FieldGenerator
 		{
 			return connection.GetSugorokuConnectPointList();
 		}
+
+		public float RiverWidth
+		{
+			get => riverWidth;
+		}
+
+		public float RoadWidth
+		{
+			get => roadWidth;
+		}
+
+		public event System.Action OnGenerate;
 
 
 
