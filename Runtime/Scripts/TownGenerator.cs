@@ -8,14 +8,7 @@ namespace FieldGenerator
 	{
 		void Awake()
 		{
-			random = new System.Random(seed);
-
-			connection.Initialize();
-
-			riverPointsPlacer = new ObjectPlacer("RiverPoints");
-			districtRoadPointPlacer = new ObjectPlacer("DistrictRoadPoints");
-			roadAlongRiverPointPlacer = new ObjectPlacer("RoadAlongRiverPointPlacer");
-			gridRoadPointPlacer = new ObjectPlacer("GridRoadPointPlacer");
+			Initialize();
 		}
 
 		void Start()
@@ -31,7 +24,19 @@ namespace FieldGenerator
 			}
 		}
 
-		void GenerateTown()
+		public void Initialize()
+		{
+			random = new System.Random(seed);
+
+			connection.Initialize();
+
+			riverPointsPlacer = new ObjectPlacer("RiverPoints");
+			districtRoadPointPlacer = new ObjectPlacer("DistrictRoadPoints");
+			roadAlongRiverPointPlacer = new ObjectPlacer("RoadAlongRiverPointPlacer");
+			gridRoadPointPlacer = new ObjectPlacer("GridRoadPointPlacer");
+		}
+
+		public void GenerateTown()
 		{
 			fieldPoints.Clear();
 
