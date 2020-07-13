@@ -325,17 +325,26 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: feb7e8efdd9280f44b6672b1fcb6574e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  prefab: {fileID: 6956264891214760591, guid: 77afca9b7904dd34291edf97f5c0f156, type: 3}
-  riverPrefab: {fileID: 8968545609573519753, guid: b8d6c4dfd008b0343b9181e181ec1741,
+  riverPointPrefab: {fileID: 6956264891214760591, guid: ce1fc0abbf36fb5479cdc01971df6b55,
     type: 3}
-  roadPrefab: {fileID: 7849258118220870130, guid: 58cfbae015cb6424e91ff7d478c1f517,
+  districtRoadPointPrefab: {fileID: 6956264891214760591, guid: 52aad7ccd2bf690409ba9eb1cb1b9e22,
+    type: 3}
+  roadAlongRiverPointPrefab: {fileID: 6956264891214760591, guid: ef5dae5f7ebf7784eb25a0850e415094,
+    type: 3}
+  gridRoadPointPrefab: {fileID: 6956264891214760591, guid: ebf0b984b2835a44eaffc7fedd37f619,
     type: 3}
   seed: 0
-  fieldSize: {x: 100, y: 100}
+  chunkSize: 100
+  numberOfChunk: {x: 10, y: 10}
   headwaterIsOutside: 1
+  riverWidth: 10
   angleRange: 60
   riverBranchingProb: 1
   minNumStepToBranch: 10
+  bendabilityAttenuation: 0.01
+  roadWidth: 4
+  distanceFromRiver: 2
+  roadSpacing: 20
 --- !u!4 &1426106583
 Transform:
   m_ObjectHideFlags: 0
