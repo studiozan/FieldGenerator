@@ -306,6 +306,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1426106583}
   - component: {fileID: 1426106582}
+  - component: {fileID: 1426106584}
   m_Layer: 0
   m_Name: manager
   m_TagString: Untagged
@@ -359,3 +360,19 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1426106584
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1426106581}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ca825ce92356da439d85b85e25aa4cf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  riverPrefab: {fileID: 8968545609573519753, guid: b8d6c4dfd008b0343b9181e181ec1741,
+    type: 3}
+  roadPrefab: {fileID: 7849258118220870130, guid: 58cfbae015cb6424e91ff7d478c1f517,
+    type: 3}
