@@ -21,8 +21,11 @@ public class PlayerMove : MonoBehaviour
 		if( NowPoint == null)
 		{
 			List<FieldConnectPoint> tmp_list = SugorokuScript.GetPointList();
-			NowPoint = tmp_list[ 0];
-			gameObject.transform.localPosition = NowPoint.Position;
+			if( tmp_list != null)
+			{
+				NowPoint = tmp_list[ 0];
+				gameObject.transform.localPosition = NowPoint.Position;
+			}
 		}
 		if( Input.GetKeyDown(KeyCode.Z))
 		{

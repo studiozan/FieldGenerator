@@ -24,15 +24,16 @@ namespace FieldGenerator
 			ObjectList = new List<GameObject>();
 			FieldPointList = new List<FieldPoint>();
 
-			TestCalc2();
+			initializedFlag = false;
+			//TestCalc2();
 		}
 
 		void TestCalc2()
 		{
 			/* 川で繋がっている部分のポリゴンを生成 */
-			ObjectCreate( TownScript.GetRiverConnectPointList(), true);
+			//ObjectCreate( TownScript.GetRiverConnectPointList(), true);
 			/* すごろく用に繋がっている部分のポリゴンを生成 */
-			ObjectCreate( TownScript.GetSugorokuConnectPointList());
+			//ObjectCreate( TownScript.GetSugorokuConnectPointList());
 
 			if( SugorokuScript != null)
 			{
@@ -363,12 +364,18 @@ namespace FieldGenerator
 
 		void Update()
 		{
+			if( initializedFlag == false)
+			{
+				TestCalc2();
+				initializedFlag = true;
+			}
 			if( Input.GetKeyDown( KeyCode.Z))
 			{
 				TestCalc2();
 			}
 		}
 
+		bool initializedFlag;
 		System.Random RandomSystem;
 		List<Point> PointList;
 		List<FieldPoint> FieldPointList;

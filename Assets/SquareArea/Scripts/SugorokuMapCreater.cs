@@ -83,7 +83,7 @@ namespace SugorokuMap
 					tmp_i = 2;
 				}
 				mass_obj = Instantiate( ObjectTbl[ tmp_i]) as GameObject;
-				mass_obj.transform.localPosition = tmp_point.Position;
+				mass_obj.transform.localPosition = new Vector3( tmp_point.Position.x, ObjectHeight, tmp_point.Position.z);
 				mass_obj.transform.localScale = new Vector3( 7.5f, 1f, 7.5f);
 				mass_obj.transform.parent = gameObject.transform;
 				ObjectList.Add( mass_obj);
@@ -97,7 +97,7 @@ namespace SugorokuMap
 					obj.transform.parent = mass_obj.transform;
 					ObjectList.Add( obj);
 					mesh_script = obj.GetComponent<MeshCreate>();
-					mesh_script.RoadCreatePoly( vec_list, 2, 0f, 0.1f);
+					mesh_script.RoadCreatePoly( vec_list, 2, 0f, ObjectHeight);
 				}
 			}
 
@@ -281,7 +281,7 @@ namespace SugorokuMap
 								list_idx_tbl[ 2] = tmp_list2[ i2];
 								flg = true;
 								i0 = tmp_list.Count;
-								i1 = tmp_point.ConnectionList.Count;
+								i1 = tmp_list.Count;
 								i2 = tmp_list2.Count;
 								i3 = tmp_point2.ConnectionList.Count;
 							}
@@ -459,6 +459,9 @@ namespace SugorokuMap
 
 		int State;
 		
+		[SerializeField]
+		float ObjectHeight = 0f;
+
 		[SerializeField]
 		GameObject[] ObjectTbl = default;
 	}
