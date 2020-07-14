@@ -14,6 +14,7 @@ public class MapShaderCalc : MonoBehaviour
 		MapGroundScript = new MapGroundPolygonCreator();
 		MapGroundScript.SetObject( ObjectTable[ 4]);
 
+		TownScript.Initialize();
 		Create();
 	}
 
@@ -25,7 +26,6 @@ public class MapShaderCalc : MonoBehaviour
 
 	void Create()
 	{
-		TownScript.Initialize();
 		TownScript.GenerateTown();
 		
 		/* 川で繋がっている部分のポリゴンを生成 */
@@ -36,8 +36,44 @@ public class MapShaderCalc : MonoBehaviour
 		List<FieldConnectPoint> point_list;
 		point_list = TownScript.GetSugorokuConnectPointList();
 		MapGroundScript.PolygonCreate( point_list);
+#if true
+		List<Vector3> vec_list = new List<Vector3>();
+		List<Vector2> uv_list = new List<Vector2>();
+		List<Vector2> tmp_list;
+
+#if false
+		vec_list.Add( new Vector3(-100,0,100));
+		vec_list.Add( new Vector3(0,0,100));
+		vec_list.Add( new Vector3(0,0,0));
+		vec_list.Add( new Vector3(-100,0,0));
+#else
+		vec_list.Add( new Vector3(-100,0,100));	// 0
+		vec_list.Add( new Vector3(0,0,100));	// 1
+		vec_list.Add( new Vector3(-100,0,0));	// 3
+		vec_list.Add( new Vector3(0,0,0));		// 2 
+#endif
+
+		BuildingParameter buil_param = new BuildingParameter( vec_list);
+		List<BuildingParameter> buil_list = new List<BuildingParameter>();
+		buil_param.SetBuildingType(BuildingParameter.BuildingType.kBuildingB, 2);
+		buil_param.SetBuildingHeight( 200f);
+		tmp_list = buil_param.GetRoofTopUV();
+//		tmp_list = buil_param.GetSideUV();
+		uv_list.Add( tmp_list[ 0]);
+		uv_list.Add( tmp_list[ 1]);
+		uv_list.Add( tmp_list[ 2]);
+		
+		uv_list.Add( tmp_list[ 2]);
+		uv_list.Add( tmp_list[ 3]);
+		uv_list.Add( tmp_list[ 0]);
+
+		buil_list.Add( buil_param);
+		//test_mesh.PolygonCreate( vec_list, uv_list);
+		test_mesh.BuildingPolygonCreate( buil_list);
+#endif
 	}
 	
+	/* 川と道路を線状ポリゴンで結ぶ */
 	void ObjectCreate( List<FieldConnectPoint> list, bool clear = false)
 	{
 		int i0, i1, tmp_i;
@@ -99,4 +135,8 @@ public class MapShaderCalc : MonoBehaviour
 
 	[SerializeField]
 	TownGenerator TownScript = default;
+#if true
+	[SerializeField]
+	MeshCreator test_mesh = default;
+#endif
 }
