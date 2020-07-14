@@ -51,6 +51,8 @@ namespace FieldGenerator
 			roadAlongRiverPointPlacer.PlaceObjects(roadAlongRiverPointPrefab, road.RoadAlongRiverPoints);
 			gridRoadPointPlacer.PlaceObjects(gridRoadPointPrefab, road.GridRoadPoints);
 
+			DetectSurroundedArea();
+
 			OnGenerate?.Invoke();
 		}
 
@@ -88,6 +90,65 @@ namespace FieldGenerator
 			fieldPoints.AddRange(road.Points);
 		}
 
+		void DetectSurroundedArea()
+		{
+			List<FieldConnectPoint> roadConnectPoints = connection.GetRoadConnectPointList();
+			for (int i0 = 0; i0 < roadConnectPoints.Count; ++i0)
+			{
+				roadConnectPoints[i0].Index = i0;
+			}
+
+			for (int i0 = 0; i0 < roadConnectPoints.Count; ++i0)
+			{
+				FieldConnectPoint point = roadConnectPoints[i0];
+				List<FieldConnectPoint> connectPoints = point.ConnectionList;
+				for (int i1 = 0; i1 < connectPoints.Count; ++i1)
+				{
+					var areaPoints = new List<Vector3>();
+					if (TryDetectSurroundedAreaRecursive(connectPoints[i1], areaPoints, point.Index, point.Index, 3) != false)
+					{
+						areaPoints.Add(point.Position);
+						Vector3 dir1 = areaPoints[1] - areaPoints[0];
+						Vector3 dir2 = areaPoints[2] - areaPoints[1];
+						if (Vector3.Cross(dir1, dir2).y < 0)
+						{
+							areaPoints.Reverse();
+						}
+						areas.Add(new SurroundedArea { AreaPoints = areaPoints });
+					}
+				}
+			}
+		}
+
+		bool TryDetectSurroundedAreaRecursive(FieldConnectPoint point, List<Vector3> areaPoints, int targetIndex, int prevIndex, int count)
+		{
+			if (count > 0)
+			{
+				List<FieldConnectPoint> connectPoints = point.ConnectionList;
+				for (int i0 = 0; i0 < connectPoints.Count; ++i0)
+				{
+					FieldConnectPoint connectPoint = connectPoints[i0];
+					int connectIndex = connectPoint.Index;
+					if (connectIndex != prevIndex)
+					{
+						if (connectIndex == targetIndex)
+						{
+							areaPoints.Add(point.Position);
+							return true;
+						}
+
+						if (TryDetectSurroundedAreaRecursive(connectPoint, areaPoints, targetIndex, point.Index, count - 1) != false)
+						{
+							areaPoints.Add(point.Position);
+							return true;
+						}
+					}
+				}
+			}
+
+			return false;
+		}
+
 		public List<FieldPoint> GetFieldPoints()
 		{
 			return fieldPoints;
@@ -116,6 +177,11 @@ namespace FieldGenerator
 		public float RoadWidth
 		{
 			get => roadWidth;
+		}
+
+		public List<SurroundedArea> SurroundedAreas
+		{
+			get => areas;
 		}
 
 		public event System.Action OnGenerate;
@@ -176,5 +242,7 @@ namespace FieldGenerator
 		ObjectPlacer districtRoadPointPlacer;
 		ObjectPlacer roadAlongRiverPointPlacer;
 		ObjectPlacer gridRoadPointPlacer;
+
+		List<SurroundedArea> areas = new List<SurroundedArea>();
 	}
 }
