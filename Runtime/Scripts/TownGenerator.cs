@@ -6,24 +6,6 @@ namespace FieldGenerator
 {
 	public class TownGenerator : MonoBehaviour
 	{
-		void Awake()
-		{
-			Initialize();
-		}
-
-		void Start()
-		{
-			GenerateTown();
-		}
-
-		void Update()
-		{
-			if (Input.GetKeyDown(KeyCode.Space) != false)
-			{
-				GenerateTown();
-			}
-		}
-
 		public void Initialize()
 		{
 			random = new System.Random(seed);
@@ -36,7 +18,7 @@ namespace FieldGenerator
 			gridRoadPointPlacer = new ObjectPlacer("GridRoadPointPlacer");
 		}
 
-		public void GenerateTown()
+		public IEnumerator GenerateTown()
 		{
 			fieldPoints.Clear();
 
@@ -53,7 +35,9 @@ namespace FieldGenerator
 
 			DetectSurroundedArea();
 
-			OnGenerate?.Invoke();
+			OnGenerate?.Invoke(this);
+
+			yield return null;
 		}
 
 		void GenerateRiver()
@@ -149,6 +133,13 @@ namespace FieldGenerator
 			return false;
 		}
 
+		float InverseLerp(Vector3 a, Vector3 b, Vector3 value)
+		{
+			Vector3 ab = b - a;
+			Vector3 av = value - a;
+			return Vector3.Dot(av, ab) / Vector3.Dot(ab, ab);
+		}
+
 		public List<FieldPoint> GetFieldPoints()
 		{
 			return fieldPoints;
@@ -184,7 +175,7 @@ namespace FieldGenerator
 			get => areas;
 		}
 
-		public event System.Action OnGenerate;
+		public event System.Action<TownGenerator> OnGenerate;
 
 
 
