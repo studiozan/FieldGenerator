@@ -25,8 +25,7 @@ namespace FieldGenerator
 			GenerateRiver();
 			GenerateRoad();
 
-			float interval = Mathf.Max(roadWidth + roadSpacing, riverStepSize);
-			connection.FieldConnectCreate(fieldPoints, interval);
+			connection.FieldConnectCreate(fieldPoints, roadWidth + roadSpacing, riverStepSize);
 
 			riverPointsPlacer.PlaceObjects(riverPointPrefab, river.Points);
 			districtRoadPointPlacer.PlaceObjects(districtRoadPointPrefab, road.DistrictRoadPoints);
@@ -92,6 +91,7 @@ namespace FieldGenerator
 					if (TryDetectSurroundedAreaRecursive(connectPoints[i1], areaPoints, point.Index, point.Index, 3) != false)
 					{
 						areaPoints.Add(point.Position);
+						areaPoints = InnerArea(areaPoints, roadWidth * 1.5f);
 						Vector3 dir1 = areaPoints[1] - areaPoints[0];
 						Vector3 dir2 = areaPoints[2] - areaPoints[1];
 						if (Vector3.Cross(dir1, dir2).y < 0)
@@ -133,11 +133,27 @@ namespace FieldGenerator
 			return false;
 		}
 
-		float InverseLerp(Vector3 a, Vector3 b, Vector3 value)
+		List<Vector3> InnerArea(List<Vector3> areaPoints, float width)
 		{
-			Vector3 ab = b - a;
-			Vector3 av = value - a;
-			return Vector3.Dot(av, ab) / Vector3.Dot(ab, ab);
+			var innerPoints = new List<Vector3>();
+
+			Vector3 center = Vector3.zero;
+			for (int i0 = 0; i0 < areaPoints.Count; ++i0)
+			{
+				center += areaPoints[i0];
+			}
+			center /= areaPoints.Count;
+
+			for (int i0 = 0; i0 < areaPoints.Count; ++i0)
+			{
+				Vector3 point = areaPoints[i0];
+				Vector3 dir = center - point;
+				dir.Normalize();
+				dir *= width;
+				innerPoints.Add(point + dir);
+			}
+
+			return innerPoints;
 		}
 
 		public List<FieldPoint> GetFieldPoints()
