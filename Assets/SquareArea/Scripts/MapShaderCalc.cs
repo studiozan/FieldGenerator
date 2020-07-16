@@ -10,9 +10,9 @@ public class MapShaderCalc : MonoBehaviour
 	// Start is called before the first frame update
 	void Start()
 	{
-		ObjectList = new List<GameObject>();
-		MapGroundScript = new MapGroundPolygonCreator();
-		MapGroundScript.SetObject( ObjectTable[ 4]);
+		objectList = new List<GameObject>();
+		mapGroundScript = new MapGroundPolygonCreator();
+		mapGroundScript.SetObject( objectTable[ 4]);
 
 		initializedFlag = false;
 	}
@@ -29,17 +29,17 @@ public class MapShaderCalc : MonoBehaviour
 
 	void Create()
 	{
-		//TownScript.GenerateTown();
+		//townScript.GenerateTown();
 		
 		/* 川で繋がっている部分のポリゴンを生成 */
-		//ObjectCreate( TownScript.GetRiverConnectPointList(), true);
+		//ObjectCreate( townScript.GetRiverConnectPointList(), true);
 		/* すごろく用に繋がっている部分のポリゴンを生成 */
-		//ObjectCreate( TownScript.GetSugorokuConnectPointList());
+		//ObjectCreate( townScript.GetSugorokuConnectPointList());
 
 		List<FieldConnectPoint> point_list;
-		point_list = TownScript.GetSugorokuConnectPointList();
-		//point_list = TownScript.GetRoadConnectPointList();
-		MapGroundScript.PolygonCreate( point_list);
+		point_list = townScript.GetSugorokuConnectPointList();
+		//point_list = townScript.GetRoadConnectPointList();
+		StartCoroutine( mapGroundScript.GroundPolygonCreate( gameObject.transform, point_list));
 #if false
 		List<Vector3> vec_list = new List<Vector3>();
 		List<Vector2> uv_list = new List<Vector2>();
@@ -99,21 +99,21 @@ public class MapShaderCalc : MonoBehaviour
 
 		if( clear != false)
 		{
-			for( i0 = 0; i0 < ObjectList.Count; i0++)
+			for( i0 = 0; i0 < objectList.Count; i0++)
 			{
-				Destroy( ObjectList[ i0].gameObject);
+				Destroy( objectList[ i0].gameObject);
 			}
-			ObjectList.Clear();
+			objectList.Clear();
 		}
 
 		for( i0 = 0; i0 < list.Count; i0++)
 		{
 			tmp_point = list[ i0];
-			obj = Instantiate( ObjectTable[ 0]) as GameObject;
+			obj = Instantiate( objectTable[ 0]) as GameObject;
 			obj.transform.localPosition = tmp_point.Position;
 			obj.transform.parent = gameObject.transform;
 			obj.name = "obj" + i0;
-			ObjectList.Add( obj);
+			objectList.Add( obj);
 
 			//if( !(tmp_point.Attribute == 2 || tmp_point.Attribute == 4))
 			{
@@ -123,7 +123,7 @@ public class MapShaderCalc : MonoBehaviour
 			tmp_i = tbl[ (int)tmp_point.Type];
 			for( i1 = 0; i1 < tmp_point.ConnectionList.Count; i1++)
 			{
-				obj2 = Instantiate( ObjectTable[ tmp_i]) as GameObject;
+				obj2 = Instantiate( objectTable[ tmp_i]) as GameObject;
 				mesh_script = obj2.GetComponent<MeshCreate>();
 				vec_list.Clear();
 				vec_list.Add( new Vector2( tmp_point.Position.x, tmp_point.Position.z));
@@ -136,14 +136,14 @@ public class MapShaderCalc : MonoBehaviour
 
 	bool initializedFlag;
 
-	List<GameObject> ObjectList;
-	MapGroundPolygonCreator MapGroundScript;
+	List<GameObject> objectList;
+	MapGroundPolygonCreator mapGroundScript;
 
 	[SerializeField]
-	GameObject[] ObjectTable = default;
+	GameObject[] objectTable = default;
 
 	[SerializeField]
-	TownGenerator TownScript = default;
+	TownGenerator townScript = default;
 #if false
 	[SerializeField]
 	MeshCreator test_mesh = default;

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using FieldGenerator;
 using SugorokuGenerator;
+using PolygonGenerator;
 using SquareArea;
 
 public class SugorokuMapCheck : MonoBehaviour
@@ -10,26 +11,52 @@ public class SugorokuMapCheck : MonoBehaviour
 	// Start is called before the first frame update
 	void Start()
 	{
-		InitializedFlag = false;
+		initializedFlag = false;
+
+		riverPolygonScript = new LinePolygonCreator();
+		roadPolygonScript = new LinePolygonCreator();
+		objectList = new List<GameObject>();
+		sugorokuScript = new SugorokuMapGenerator();
+
+		GameObject river, road;
+		river = Instantiate( objectTable[ 4]);
+		river.transform.parent = gameObject.transform;
+		road = Instantiate( objectTable[ 5]);
+		road.transform.parent = gameObject.transform;
+		riverPolygonScript.SetObject( river);
+		roadPolygonScript.SetObject( road);
+		
+		mapGroundScript = new MapGroundPolygonCreator();
+		mapGroundScript.SetObject( objectTable[ 3]);
+		
+		townScript.Initialize();
+		sugorokuScript.Initialize();
 	}
 
 	// Update is called once per frame
 	void Update()
 	{
-		if( InitializedFlag == false)
+		if( initializedFlag == false)
 		{
 			Initialize();
-			InitializedFlag = true;
+			initializedFlag = true;
 		}
 	}
 
 	void Initialize()
 	{
-		ObjectList = new List<GameObject>();
-		SugorokuScript = new SugorokuMapGenerator();
-		SugorokuScript.Initialize();
-		SugorokuScript.SetPointList(TownScript.GetSugorokuConnectPointList());
-		SugorokuScript.SugorokuMapCreate();
+		/*! マップの頂点の生成 */
+		StartCoroutine( townScript.GenerateTown());
+		/*! 川のポリゴンの生成 */
+		StartCoroutine( riverPolygonScript.CreatePolygon( townScript.GetRiverConnectPointList(), townScript.RiverWidth));
+		/*! 道路のポリゴンの生成 */
+		StartCoroutine( roadPolygonScript.CreatePolygon( townScript.GetRoadConnectPointList(), townScript.RoadWidth));
+		/*! 地面のポリゴンの生成 */
+		StartCoroutine( mapGroundScript.GroundPolygonCreate( gameObject.transform, townScript.GetSugorokuConnectPointList()));
+
+		sugorokuScript.SetPointList(townScript.GetSugorokuConnectPointList());
+		/*! すごろくマップの生成 */
+		StartCoroutine( sugorokuScript.SugorokuMapCreate());
 
 		ViewCreate();
 	}
@@ -48,14 +75,14 @@ public class SugorokuMapCheck : MonoBehaviour
 		List<FieldConnectPoint> tmp_list;
 		List<int> tmp_data_list;
 
-		for( i0 = 0; i0 < ObjectList.Count; i0++)
+		for( i0 = 0; i0 < objectList.Count; i0++)
 		{
-			Destroy( ObjectList[ i0].gameObject);
+			Destroy( objectList[ i0].gameObject);
 		}
-		ObjectList.Clear();
+		objectList.Clear();
 
-		tmp_list = SugorokuScript.GetPointList();
-		tmp_data_list = SugorokuScript.GetSugorokuDataList();
+		tmp_list = sugorokuScript.GetPointList();
+		tmp_data_list = sugorokuScript.GetSugorokuDataList();
 		
 		for( i0 = 0; i0 < tmp_list.Count; i0++)
 		{
@@ -68,33 +95,36 @@ public class SugorokuMapCheck : MonoBehaviour
 			{
 				tmp_i = 2;
 			}
-			mass_obj = Instantiate( ObjectTable[ tmp_i]) as GameObject;
+			mass_obj = Instantiate( objectTable[ tmp_i]) as GameObject;
 			mass_obj.transform.localPosition = new Vector3( tmp_point.Position.x, 10f, tmp_point.Position.z);
 			mass_obj.transform.localScale = new Vector3( 7.5f, 1f, 7.5f);
 			mass_obj.transform.parent = gameObject.transform;
-			ObjectList.Add( mass_obj);
+			objectList.Add( mass_obj);
 			for( i1 = 0; i1 < tmp_point.ConnectionList.Count; i1++)
 			{
 				tmp_point2 = tmp_point.ConnectionList[ i1];
 				vec_list.Clear();
 				vec_list.Add( new Vector2( tmp_point.Position.x, tmp_point.Position.z));
 				vec_list.Add( new Vector2( tmp_point2.Position.x, tmp_point2.Position.z));
-				obj = Instantiate( ObjectTable[ 1]) as GameObject;
+				obj = Instantiate( objectTable[ 1]) as GameObject;
 				obj.transform.parent = mass_obj.transform;
-				ObjectList.Add( obj);
+				objectList.Add( obj);
 				mesh_script = obj.GetComponent<MeshCreate>();
 				mesh_script.RoadCreatePoly( vec_list, 2, 0f, 10f);
 			}
 		}
 	}
 
-	SugorokuMapGenerator SugorokuScript;
-	bool InitializedFlag;
-	List<GameObject> ObjectList;
+	SugorokuMapGenerator sugorokuScript;
+	bool initializedFlag;
+	List<GameObject> objectList;
+	LinePolygonCreator riverPolygonScript;
+	LinePolygonCreator roadPolygonScript;
+	MapGroundPolygonCreator mapGroundScript;
 
 	[SerializeField]
-	TownGenerator TownScript = default;
+	TownGenerator townScript = default;
 
 	[SerializeField]
-	GameObject[] ObjectTable = default;
+	GameObject[] objectTable = default;
 }
