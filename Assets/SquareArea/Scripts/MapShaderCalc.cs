@@ -14,49 +14,46 @@ public class MapShaderCalc : MonoBehaviour
 		MapGroundScript = new MapGroundPolygonCreator();
 		MapGroundScript.SetObject( ObjectTable[ 4]);
 
-		TownScript.Initialize();
-		Create();
+		initializedFlag = false;
 	}
 
 	// Update is called once per frame
 	void Update()
 	{
-		
+		if( initializedFlag == false)
+		{
+			Create();
+			initializedFlag = true;
+		}
 	}
 
 	void Create()
 	{
-		TownScript.GenerateTown();
+		//TownScript.GenerateTown();
 		
 		/* 川で繋がっている部分のポリゴンを生成 */
-		ObjectCreate( TownScript.GetRiverConnectPointList(), true);
+		//ObjectCreate( TownScript.GetRiverConnectPointList(), true);
 		/* すごろく用に繋がっている部分のポリゴンを生成 */
-		ObjectCreate( TownScript.GetSugorokuConnectPointList());
+		//ObjectCreate( TownScript.GetSugorokuConnectPointList());
 
 		List<FieldConnectPoint> point_list;
 		point_list = TownScript.GetSugorokuConnectPointList();
+		//point_list = TownScript.GetRoadConnectPointList();
 		MapGroundScript.PolygonCreate( point_list);
-#if true
+#if false
 		List<Vector3> vec_list = new List<Vector3>();
 		List<Vector2> uv_list = new List<Vector2>();
 		List<Vector2> tmp_list;
 
-#if false
-		vec_list.Add( new Vector3(-100,0,100));
-		vec_list.Add( new Vector3(0,0,100));
-		vec_list.Add( new Vector3(0,0,0));
-		vec_list.Add( new Vector3(-100,0,0));
-#else
-		vec_list.Add( new Vector3(-100,0,100));	// 0
-		vec_list.Add( new Vector3(0,0,100));	// 1
-		vec_list.Add( new Vector3(-100,0,0));	// 3
-		vec_list.Add( new Vector3(0,0,0));		// 2 
-#endif
+		vec_list.Add( new Vector3(-100,0,100));		// 0
+		vec_list.Add( new Vector3(0,0,100));		// 1
+		vec_list.Add( new Vector3(0,0,0));			// 2
+		vec_list.Add( new Vector3(-100,0,0));		// 3
 
 		BuildingParameter buil_param = new BuildingParameter( vec_list);
 		List<BuildingParameter> buil_list = new List<BuildingParameter>();
-		buil_param.SetBuildingType(BuildingParameter.BuildingType.kBuildingB, 2);
-		buil_param.SetBuildingHeight( 200f);
+		//buil_param.SetBuildingType(BuildingParameter.BuildingType.kBuildingB, 2);
+		buil_param.SetBuildingHeight( 100f);
 		tmp_list = buil_param.GetRoofTopUV();
 //		tmp_list = buil_param.GetSideUV();
 		uv_list.Add( tmp_list[ 0]);
@@ -67,6 +64,16 @@ public class MapShaderCalc : MonoBehaviour
 		uv_list.Add( tmp_list[ 3]);
 		uv_list.Add( tmp_list[ 0]);
 
+		buil_list.Add( buil_param);
+		
+		vec_list = new List<Vector3>();
+		vec_list.Add( new Vector3(-100,0,300));
+		vec_list.Add( new Vector3(0,0,300));
+		vec_list.Add( new Vector3(0,0,200));
+		vec_list.Add( new Vector3(-100,0,200));
+		buil_param = new BuildingParameter( vec_list);
+		buil_param.SetBuildingHeight( 50f);
+		buil_param.SetBuildingType(BuildingParameter.BuildingType.kBuildingC, 3);
 		buil_list.Add( buil_param);
 		//test_mesh.PolygonCreate( vec_list, uv_list);
 		test_mesh.BuildingPolygonCreate( buil_list);
@@ -127,6 +134,8 @@ public class MapShaderCalc : MonoBehaviour
 		}
 	}
 
+	bool initializedFlag;
+
 	List<GameObject> ObjectList;
 	MapGroundPolygonCreator MapGroundScript;
 
@@ -135,7 +144,7 @@ public class MapShaderCalc : MonoBehaviour
 
 	[SerializeField]
 	TownGenerator TownScript = default;
-#if true
+#if false
 	[SerializeField]
 	MeshCreator test_mesh = default;
 #endif
