@@ -8,7 +8,7 @@ namespace FieldGenerator
 	{
 		public ObjectPlacer()
 		{
-			parentObj = new GameObject();
+			gameObject = new GameObject();
 		}
 
 		public ObjectPlacer(string name) : this()
@@ -16,9 +16,19 @@ namespace FieldGenerator
 			SetName(name);
 		}
 
+		public ObjectPlacer(string name, Transform parent) : this(name)
+		{
+			SetParent(parent);
+		}
+
 		public void SetName(string name)
 		{
-			parentObj.name = name;
+			gameObject.name = name;
+		}
+
+		public void SetParent(Transform parent)
+		{
+			gameObject.transform.SetParent(parent);
 		}
 
 		public void PlaceObjects<T>(GameObject prefab, List<T> points) where T : FieldPoint
@@ -31,7 +41,7 @@ namespace FieldGenerator
 				}
 				else
 				{
-					GameObject obj = Object.Instantiate(prefab, points[i0].Position, Quaternion.identity, parentObj.transform);
+					GameObject obj = Object.Instantiate(prefab, points[i0].Position, Quaternion.identity, gameObject.transform);
 					obj.name = $"Point_{i0}";
 					objects.Add(obj);
 				}
@@ -56,7 +66,7 @@ namespace FieldGenerator
 			objects.Clear();
 		}
 
-		GameObject parentObj;
+		GameObject gameObject;
 		List<GameObject> objects = new List<GameObject>();
 	}
 }
