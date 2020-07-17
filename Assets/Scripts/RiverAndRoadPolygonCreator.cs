@@ -15,12 +15,13 @@ namespace PolygonGenerator
 			riverPolygonCreator.SetObject(riverObj);
 			roadPolygonCreator.SetObject(roadObj);
 
-			TownGenerator generator = GetComponent<TownGenerator>();
-			generator.OnGenerate += () =>
-			{
-				riverPolygonCreator.CreatePolygon(generator.GetRiverConnectPointList(), generator.RiverWidth);
-				roadPolygonCreator.CreatePolygon(generator.GetRoadConnectPointList(), generator.RoadWidth);
-			};
+			GetComponent<TownGenerator>().OnGenerate += CreateRiverAndRoadPolygon;
+		}
+
+		void CreateRiverAndRoadPolygon(TownGenerator generator)
+		{
+			StartCoroutine(riverPolygonCreator.CreatePolygon(generator.GetRiverConnectPointList(), generator.RiverWidth));
+			StartCoroutine(roadPolygonCreator.CreatePolygon(generator.GetRoadConnectPointList(), generator.RoadWidth));
 		}
 
 
