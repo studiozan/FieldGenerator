@@ -36,7 +36,7 @@ namespace FieldGenerator
 
 			OnGenerate?.Invoke(this);
 
-			yield return null;
+			yield break;
 		}
 
 		void GenerateRiver()
