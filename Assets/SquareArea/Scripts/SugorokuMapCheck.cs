@@ -15,8 +15,9 @@ public class SugorokuMapCheck : MonoBehaviour
 
 		riverPolygonScript = new LinePolygonCreator();
 		roadPolygonScript = new LinePolygonCreator();
-		objectList = new List<GameObject>();
 		sugorokuScript = new SugorokuMapGenerator();
+		mapGroundScript = new MapGroundPolygonCreator();
+		objectList = new List<GameObject>();
 
 		GameObject river, road;
 		river = Instantiate( objectTable[ 4]);
@@ -26,7 +27,6 @@ public class SugorokuMapCheck : MonoBehaviour
 		riverPolygonScript.SetObject( river);
 		roadPolygonScript.SetObject( road);
 		
-		mapGroundScript = new MapGroundPolygonCreator();
 		mapGroundScript.SetObject( objectTable[ 3]);
 		
 		townScript.Initialize();
@@ -115,12 +115,17 @@ public class SugorokuMapCheck : MonoBehaviour
 		}
 	}
 
-	SugorokuMapGenerator sugorokuScript;
 	bool initializedFlag;
 	List<GameObject> objectList;
-	LinePolygonCreator riverPolygonScript;
-	LinePolygonCreator roadPolygonScript;
-	MapGroundPolygonCreator mapGroundScript;
+	
+	[SerializeField, HideInInspector]
+	SugorokuMapGenerator sugorokuScript = default;
+	[SerializeField, HideInInspector]
+	LinePolygonCreator riverPolygonScript = default;
+	[SerializeField, HideInInspector]
+	LinePolygonCreator roadPolygonScript = default;
+	[SerializeField, HideInInspector]
+	MapGroundPolygonCreator mapGroundScript = default;
 
 	[SerializeField]
 	TownGenerator townScript = default;

@@ -10,13 +10,17 @@
       "version": "file:../../PolygonGenerator",
       "depth": 0,
       "source": "local",
-      "dependencies": {}
+      "dependencies": {
+        "com.studiozan.fieldgenerator": "https://github.com/studiozan/FieldGenerator.git"
+      }
     },
     "com.studiozan.sugorokugenerator": {
       "version": "file:../../SugorokuGenerator",
       "depth": 0,
       "source": "local",
-      "dependencies": {}
+      "dependencies": {
+        "com.studiozan.fieldgenerator": "https://github.com/studiozan/FieldGenerator.git"
+      }
     },
     "com.unity.collab-proxy": {
       "version": "1.2.16",
