@@ -33,7 +33,7 @@ namespace FieldGenerator
 			bool flg;
 
 			flg = true;
-			for( i0 = 0; i0 < ConnectionList.Count; i0++)
+			for( i0 = 0; i0 < ConnectionList.Count; ++i0)
 			{
 				sub = point.Position - ConnectionList[ i0].Position;
 				tmp_f = sub.x * sub.x + sub.z * sub.z;

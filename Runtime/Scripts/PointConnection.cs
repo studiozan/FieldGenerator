@@ -36,7 +36,7 @@ namespace FieldGenerator
 			fieldPointList = field_list;
 
 			SetFieldPoint();
-			List<int> list = new List<int>();
+			var list = new List<int>();
 
 			/*! 川を繋げる */
 			list.Add( (int)PointType.kRiver);
@@ -73,10 +73,10 @@ namespace FieldGenerator
 			roadConnectPointList.Clear();
 			sugorokuConnectPointList.Clear();
 			
-			for( i0 = 0; i0 < fieldPointList.Count; i0++)
+			for( i0 = 0; i0 < fieldPointList.Count; ++i0)
 			{
 				tmp_field = fieldPointList[ i0];
-				for( i1 = 0; i1 < 3; i1++)
+				for( i1 = 0; i1 < 3; ++i1)
 				{
 					flg = false;
 					switch( i1)
@@ -141,9 +141,9 @@ namespace FieldGenerator
 			bool flg, order_flg;
 			Vector3 sub;
 			FieldConnectPoint tmp_point;
-			Vector3[] direction = new Vector3[ 4];
-			float[] min = new float[ 4];
-			int[] no = new int[ 4];
+			var direction = new Vector3[ 4];
+			var min = new float[ 4];
+			var no = new int[ 4];
 			itv = interval * 1.5f;
 			itv = itv * itv;
 			random_count = 0;
@@ -155,11 +155,11 @@ namespace FieldGenerator
 
 			/* ランダムを使う場合は双方向で繋がるようにしないとダメかもしれない */
 
-			for( i0 = 0; i0 < point_list.Count; i0++)
+			for( i0 = 0; i0 < point_list.Count; ++i0)
 			{
 				tmp_point = point_list[ i0];
 				flg = false;
-				for( i1 = 0; i1 < specific_list.Count; i1++)
+				for( i1 = 0; i1 < specific_list.Count; ++i1)
 				{
 					if( (int)tmp_point.Type == specific_list[ i1])
 					{
@@ -188,7 +188,7 @@ namespace FieldGenerator
 				no[ 0] = -1;	no[ 1] = -1;	no[ 2] = -1;	no[ 3] = -1;
 				order_flg = false;
 				count = tmp_point.ConnectionList.Count;
-				for( i1 = 0; i1 < point_list.Count; i1++)
+				for( i1 = 0; i1 < point_list.Count; ++i1)
 				{
 					if( in_order != false && count > 0)
 					{
@@ -213,7 +213,7 @@ namespace FieldGenerator
 						continue;
 					}
 					flg = false;
-					for( i2 = 0; i2 < specific_list.Count; i2++)
+					for( i2 = 0; i2 < specific_list.Count; ++i2)
 					{
 						if( (int)point_list[ i1].Type == specific_list[ i2])
 						{
@@ -235,7 +235,7 @@ namespace FieldGenerator
 					}
 					sub = sub.normalized;
 					flg = false;
-					for( i2 = 0; i2 < direction.Length; i2++)
+					for( i2 = 0; i2 < direction.Length; ++i2)
 					{
 						tmp_f = sub.x * direction[ i2].x + sub.z * direction[ i2].z;
 						if( tmp_f <= theta)
@@ -254,7 +254,7 @@ namespace FieldGenerator
 					}
 					if( flg != false)
 					{
-						count++;
+						++count;
 					}
 					if( in_order != false)
 					{
@@ -264,7 +264,7 @@ namespace FieldGenerator
 						}
 					}
 				}
-				for( i2 = 0; i2 < direction.Length; i2++)
+				for( i2 = 0; i2 < direction.Length; ++i2)
 				{
 					if( no[ i2] < 0)
 					{
@@ -275,7 +275,7 @@ namespace FieldGenerator
 					tmp_point.SetConnection( point_list[ tmp_i]);
 					point_list[ tmp_i].SetConnection( tmp_point);
 				}
-				random_count++;
+				++random_count;
 			}
 		}
 
