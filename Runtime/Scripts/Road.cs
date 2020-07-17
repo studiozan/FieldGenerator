@@ -12,14 +12,13 @@ namespace FieldGenerator
 			this.random = random;
 			this.river = river;
 
+			thinningDistance = (parameter.Spacing + parameter.Width) * 0.5f;
+
 			points.Clear();
 
 			GenerateDistrictRoad();
-			points.AddRange(districtRoadPoints);
 			GenerateRoadAlongRiver(river.RootPoint);
-			points.AddRange(roadAlongRiverPoints);
 			GenerateGridRoad();
-			points.AddRange(gridRoadPoints);
 		}
 
 		void GenerateDistrictRoad()
@@ -46,6 +45,8 @@ namespace FieldGenerator
 					}
 				}
 			}
+
+			points.AddRange(districtRoadPoints);
 		}
 
 		void GenerateRoadAlongRiver(RiverPoint riverRoot)
@@ -55,6 +56,8 @@ namespace FieldGenerator
 			{
 				GenerateRoadAlongRiverRecursive(riverRoot, riverRoot.NextPoints[i0]);
 			}
+
+			points.AddRange(roadAlongRiverPoints);
 		}
 
 		void GenerateRoadAlongRiverRecursive(RiverPoint currentPoint, RiverPoint nextPoint)
@@ -161,6 +164,31 @@ namespace FieldGenerator
 						p2 = new Vector3(x2, 0, y2);
 					}
 
+					if (river.Contain(p1) == false)
+					{
+						var point1 = new FieldPoint
+						{
+							Position = p1,
+							Type = PointType.kIntersectionOfGridRoadAndDistrictRoad,
+						};
+						if (AddIfAway(point1, thinningDistance) != false)
+						{
+							gridRoadPoints.Add(point1);
+						}
+					}
+					if (river.Contain(p2) == false)
+					{
+						var point2 = new FieldPoint
+						{
+							Position = p2,
+							Type = PointType.kIntersectionOfGridRoadAndDistrictRoad,
+						};
+						if (AddIfAway(point2, thinningDistance) != false)
+						{
+							gridRoadPoints.Add(point2);
+						}
+					}
+
 					//base---------------------------------------------------------------
 					Vector3 dir = p2 - p1;
 					float maxLength = (Quaternion.Euler(0, -angle, 0) * dir).z;
@@ -168,7 +196,6 @@ namespace FieldGenerator
 					float spacing = parameter.Spacing;
 					float totalLength = 0;
 					var basePoints = new List<Vector3>();
-					var baseFieldPoints = new List<FieldPoint>();
 					while (totalLength + width + spacing < maxLength)
 					{
 						var pos = new Vector3(0, 0, totalLength + width / 2);
@@ -200,28 +227,11 @@ namespace FieldGenerator
 								Position = pos,
 								Type = PointType.kGridRoad,
 							};
-							baseFieldPoints.Add(point);
+							if (AddIfAway(point, thinningDistance) != false)
+							{
+								gridRoadPoints.Add(point);
+							}
 						}
-					}
-
-					if (river.Contain(p1) == false)
-					{
-						var point1 = new FieldPoint
-						{
-							Position = p1,
-							Type = PointType.kIntersectionOfGridRoadAndDistrictRoad,
-						};
-						gridRoadPoints.Add(point1);
-					}
-					gridRoadPoints.AddRange(baseFieldPoints);
-					if (river.Contain(p2) == false)
-					{
-						var point2 = new FieldPoint
-						{
-							Position = p2,
-							Type = PointType.kIntersectionOfGridRoadAndDistrictRoad,
-						};
-						gridRoadPoints.Add(point2);
 					}
 					//-------------------------------------------------------------------
 
@@ -244,7 +254,10 @@ namespace FieldGenerator
 									Position = leftPoint,
 									Type = PointType.kGridRoad,
 								};
-								leftPoints.Add(lp);
+								if (AddIfAway(lp, thinningDistance) != false)
+								{
+									leftPoints.Add(lp);
+								}
 							}
 							leftPoint = leftRot * roadStep + leftPoint;
 						}
@@ -276,7 +289,10 @@ namespace FieldGenerator
 									Position = intersectionL,
 									Type = PointType.kIntersectionOfGridRoadAndDistrictRoad,
 								};
-								leftPoints.Add(lp);
+								if (AddIfAway(lp, thinningDistance) != false)
+								{
+									leftPoints.Add(lp);
+								}
 							}
 						}
 						else
@@ -289,7 +305,10 @@ namespace FieldGenerator
 									Position = pos,
 									Type = PointType.kIntersectionOfGridRoadAndDistrictRoad,
 								};
-								leftPoints.Add(lp);
+								if (AddIfAway(lp, thinningDistance) != false)
+								{
+									leftPoints.Add(lp);
+								}
 							}
 						}
 						gridRoadPoints.AddRange(leftPoints);
@@ -307,7 +326,10 @@ namespace FieldGenerator
 									Position = rightPoint,
 									Type = PointType.kGridRoad
 								};
-								rightPoints.Add(rp);
+								if (AddIfAway(rp, thinningDistance) != false)
+								{
+									rightPoints.Add(rp);
+								}
 							}
 							rightPoint = rightRot * roadStep + rightPoint;
 						}
@@ -339,7 +361,10 @@ namespace FieldGenerator
 									Position = intersectionR,
 									Type = PointType.kIntersectionOfGridRoadAndDistrictRoad
 								};
-								rightPoints.Add(rp);
+								if (AddIfAway(rp, thinningDistance) != false)
+								{
+									rightPoints.Add(rp);
+								}
 							}
 						}
 						else
@@ -352,7 +377,10 @@ namespace FieldGenerator
 									Position = pos,
 									Type = PointType.kIntersectionOfGridRoadAndDistrictRoad,
 								};
-								rightPoints.Add(rp);
+								if (AddIfAway(rp, thinningDistance) != false)
+								{
+									rightPoints.Add(rp);
+								}
 							}
 						}
 						gridRoadPoints.AddRange(rightPoints);
@@ -365,6 +393,28 @@ namespace FieldGenerator
 		bool IsInsideRect(Rect rect, Vector3 pos)
 		{
 			return pos.x > rect.x && pos.x < rect.x + rect.width && pos.z > rect.y && pos.z < rect.y + rect.height;
+		}
+
+		bool AddIfAway(FieldPoint point, float distance)
+		{
+			bool canAdd = true;
+
+			for (int i0 = 0; i0 < points.Count; ++i0)
+			{
+				Vector3 dist = points[i0].Position - point.Position;
+				if (dist.sqrMagnitude < distance * distance)
+				{
+					canAdd = false;
+					break;
+				}
+			}
+
+			if (canAdd != false)
+			{
+				points.Add(point);
+			}
+
+			return canAdd;
 		}
 
 		public List<FieldPoint> Points
@@ -396,5 +446,7 @@ namespace FieldGenerator
 		List<FieldPoint> districtRoadPoints = new List<FieldPoint>();
 		List<FieldPoint> roadAlongRiverPoints = new List<FieldPoint>();
 		List<FieldPoint> gridRoadPoints = new List<FieldPoint>();
+
+		float thinningDistance;
 	}
 }

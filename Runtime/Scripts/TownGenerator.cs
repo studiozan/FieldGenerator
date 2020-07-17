@@ -32,10 +32,6 @@ namespace FieldGenerator
 			roadAlongRiverPointPlacer.PlaceObjects(roadAlongRiverPointPrefab, road.RoadAlongRiverPoints);
 			gridRoadPointPlacer.PlaceObjects(gridRoadPointPrefab, road.GridRoadPoints);
 
-			// List<FieldConnectPoint> roadConnectPoints = connection.GetRoadConnectPointList();
-			// ThinOut(roadConnectPoints, roadSpacing / 2);
-			// gridRoadPointPlacer.PlaceObjects(gridRoadPointPrefab, roadConnectPoints);
-
 			DetectSurroundedArea();
 
 			OnGenerate?.Invoke(this);
@@ -79,6 +75,7 @@ namespace FieldGenerator
 
 		void DetectSurroundedArea()
 		{
+			areas.Clear();
 			List<FieldConnectPoint> roadConnectPoints = connection.GetRoadConnectPointList();
 			for (int i0 = 0; i0 < roadConnectPoints.Count; ++i0)
 			{
@@ -158,33 +155,6 @@ namespace FieldGenerator
 			}
 
 			return innerPoints;
-		}
-
-		void ThinOut(List<FieldConnectPoint> points, float distance)
-		{
-			for (int i0 = 0; i0 < points.Count; ++i0)
-			{
-				FieldConnectPoint point = points[i0];
-				if (point.Type != PointType.kDistrictRoad &&
-					point.Type != PointType.kRoadAlongRiver)
-				{
-					List<FieldConnectPoint> connectPoints = point.ConnectionList;
-					for (int i1 = 0; i1 < connectPoints.Count; ++i1)
-					{
-						FieldConnectPoint connectPoint = connectPoints[i1];
-						Vector3 dist = connectPoint.Position - point.Position;
-						if (dist.sqrMagnitude < distance * distance)
-						{
-							for (int i2 = 0; i2 < connectPoints.Count; ++i2)
-							{
-								connectPoints[i2].ConnectionList.Remove(point);
-							}
-							points.Remove(point);
-							break;
-						}
-					}
-				}
-			}
 		}
 
 		public List<FieldPoint> GetFieldPoints()
