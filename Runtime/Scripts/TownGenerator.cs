@@ -4,18 +4,16 @@ using UnityEngine;
 
 namespace FieldGenerator
 {
-	public class TownGenerator : MonoBehaviour
+	[System.Serializable]
+	public class TownGenerator
 	{
-		public void Initialize()
+		public void Initialize(TownParameter parameter)
 		{
-			random = new System.Random(seed);
+			this.parameter = parameter;
+
+			random = new System.Random(parameter.seed);
 
 			connection.Initialize();
-
-			riverPointsPlacer = new ObjectPlacer("RiverPoints", parent);
-			districtRoadPointPlacer = new ObjectPlacer("DistrictRoadPoints", parent);
-			roadAlongRiverPointPlacer = new ObjectPlacer("RoadAlongRiverPointPlacer", parent);
-			gridRoadPointPlacer = new ObjectPlacer("GridRoadPointPlacer", parent);
 		}
 
 		public IEnumerator GenerateTown()
@@ -25,12 +23,7 @@ namespace FieldGenerator
 			GenerateRiver();
 			GenerateRoad();
 
-			connection.FieldConnectCreate(fieldPoints, roadWidth + roadSpacing, riverStepSize);
-
-			riverPointsPlacer.PlaceObjects(riverPointPrefab, river.Points);
-			districtRoadPointPlacer.PlaceObjects(districtRoadPointPrefab, road.DistrictRoadPoints);
-			roadAlongRiverPointPlacer.PlaceObjects(roadAlongRiverPointPrefab, road.RoadAlongRiverPoints);
-			gridRoadPointPlacer.PlaceObjects(gridRoadPointPrefab, road.GridRoadPoints);
+			connection.FieldConnectCreate(fieldPoints, parameter.roadWidth + parameter.roadSpacing, riverStepSize);
 
 			DetectSurroundedArea();
 
@@ -41,35 +34,35 @@ namespace FieldGenerator
 
 		void GenerateRiver()
 		{
-			var parameter = new RiverParameter
+			var param = new RiverParameter
 			{
-				ChunkSize = chunkSize,
-				NumberOfChunk = numberOfChunk,
-				HeadwaterIsOutside = headwaterIsOutside,
-				Width = riverWidth,
-				AngleRange = angleRange,
+				ChunkSize = parameter.chunkSize,
+				NumberOfChunk = parameter.numberOfChunk,
+				HeadwaterIsOutside = parameter.headwaterIsOutside,
+				Width = parameter.riverWidth,
+				AngleRange = parameter.angleRange,
 				StepSize = riverStepSize,
-				BranchingProbability = riverBranchingProb,
-				MinNumStepToBranch = minNumStepToBranch,
-				BendabilityAttenuation = bendabilityAttenuation,
+				BranchingProbability = parameter.branchingProbability,
+				MinNumStepToBranch = parameter.minNumStepToBranch,
+				BendabilityAttenuation = parameter.bendabilityAttenuation,
 			};
 
-			river.Generate(parameter, random);
+			river.Generate(param, random);
 			fieldPoints.AddRange(river.Points);
 		}
 
 		void GenerateRoad()
 		{
-			var parameter = new RoadParameter
+			var param = new RoadParameter
 			{
-				NumberOfChunk = numberOfChunk,
-				ChunkSize = chunkSize,
-				Width = roadWidth,
-				DistanceFromRiver = distanceFromRiver,
-				Spacing = roadSpacing,
+				NumberOfChunk = parameter.numberOfChunk,
+				ChunkSize = parameter.chunkSize,
+				Width = parameter.roadWidth,
+				DistanceFromRiver = parameter.distanceFromRiver,
+				Spacing = parameter.roadSpacing,
 			};
 
-			road.Generate(parameter, river, random);
+			road.Generate(param, river, random);
 			fieldPoints.AddRange(road.Points);
 		}
 
@@ -92,7 +85,7 @@ namespace FieldGenerator
 					if (TryDetectSurroundedAreaRecursive(connectPoints[i1], areaPoints, point.Index, point.Index, 3) != false)
 					{
 						areaPoints.Add(point.Position);
-						areaPoints = InnerArea(areaPoints, roadWidth * 1.5f);
+						areaPoints = InnerArea(areaPoints, parameter.roadWidth * 1.5f);
 						Vector3 dir1 = areaPoints[1] - areaPoints[0];
 						Vector3 dir2 = areaPoints[2] - areaPoints[1];
 						if (Vector3.Cross(dir1, dir2).y < 0)
@@ -177,14 +170,24 @@ namespace FieldGenerator
 			return connection.GetSugorokuConnectPointList();
 		}
 
+		public River River
+		{
+			get => river;
+		}
+
+		public Road Road
+		{
+			get => road;
+		}
+
 		public float RiverWidth
 		{
-			get => riverWidth;
+			get => parameter.riverWidth;
 		}
 
 		public float RoadWidth
 		{
-			get => roadWidth;
+			get => parameter.roadWidth;
 		}
 
 		public List<SurroundedArea> SurroundedAreas
@@ -196,46 +199,9 @@ namespace FieldGenerator
 
 
 
-		[SerializeField]
-		Transform parent = default;
-		[SerializeField]
-		GameObject riverPointPrefab = default;
-		[SerializeField]
-		GameObject districtRoadPointPrefab = default;
-		[SerializeField]
-		GameObject roadAlongRiverPointPrefab = default;
-		[SerializeField]
-		GameObject gridRoadPointPrefab = default;
-
-		[SerializeField]
-		int seed = 0;
-		[SerializeField]
-		float chunkSize = 100;
-		[SerializeField]
-		Vector2Int numberOfChunk = new Vector2Int(10, 10);
-		[SerializeField]
-		bool headwaterIsOutside = true;
-		[SerializeField]
-		float riverWidth = 10;
-		[SerializeField]
-		float angleRange = 60;
-		[SerializeField]
-		float riverBranchingProb = 1.0f;
-		[SerializeField]
-		int minNumStepToBranch = 10;
-		[SerializeField]
-		float bendabilityAttenuation = 0.01f;
-
-		[SerializeField]
-		float roadWidth = 4;
-		[SerializeField]
-		float distanceFromRiver = 2;
-		[SerializeField]
-		float roadSpacing = 20;
-
-
-
 		System.Random random;
+
+		TownParameter parameter;
 
 		River river = new River();
 		float riverStepSize = 10;
