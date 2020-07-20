@@ -609,12 +609,12 @@ PrefabInstance:
     - target: {fileID: 4935998598909745947, guid: 649b189431f747542aade49ced6cca4d,
         type: 3}
       propertyPath: numberOfChunk.x
-      value: 3
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 4935998598909745947, guid: 649b189431f747542aade49ced6cca4d,
         type: 3}
       propertyPath: numberOfChunk.y
-      value: 3
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 4935998598909745947, guid: 649b189431f747542aade49ced6cca4d,
         type: 3}

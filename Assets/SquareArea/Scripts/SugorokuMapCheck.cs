@@ -51,8 +51,11 @@ public class SugorokuMapCheck : MonoBehaviour
 		StartCoroutine( riverPolygonScript.CreatePolygon( townScript.GetRiverConnectPointList(), townScript.RiverWidth));
 		/*! 道路のポリゴンの生成 */
 		StartCoroutine( roadPolygonScript.CreatePolygon( townScript.GetRoadConnectPointList(), townScript.RoadWidth));
+		//StartCoroutine( roadPolygonScript.CreatePolygon( townScript.GetSugorokuConnectPointList(), townScript.RoadWidth));
 		/*! 地面のポリゴンの生成 */
-		StartCoroutine( mapGroundScript.GroundPolygonCreate( gameObject.transform, townScript.GetSugorokuConnectPointList()));
+		var minSize = new Vector3( 0f, 0f, 0f);
+		var maxSize = new Vector3( 600f, 0f, 600f);
+		StartCoroutine( mapGroundScript.GroundPolygonCreate( gameObject.transform, townScript.GetRoadConnectPointList(), minSize, maxSize));
 
 		sugorokuScript.SetPointList(townScript.GetSugorokuConnectPointList());
 		/*! すごろくマップの生成 */

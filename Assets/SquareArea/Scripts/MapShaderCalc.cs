@@ -39,7 +39,9 @@ public class MapShaderCalc : MonoBehaviour
 		List<FieldConnectPoint> point_list;
 		point_list = townScript.GetSugorokuConnectPointList();
 		//point_list = townScript.GetRoadConnectPointList();
-		StartCoroutine( mapGroundScript.GroundPolygonCreate( gameObject.transform, point_list));
+		var minSize = new Vector3( 0f, 0f, 0f);
+		var maxSize = new Vector3( 500f, 0f, 500f);
+		StartCoroutine( mapGroundScript.GroundPolygonCreate( gameObject.transform, point_list, minSize, maxSize));
 #if false
 		List<Vector3> vec_list = new List<Vector3>();
 		List<Vector2> uv_list = new List<Vector2>();

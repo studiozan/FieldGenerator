@@ -154,8 +154,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   townGenerator: {fileID: 1426106582}
-  minHeight: 10
-  maxHeight: 50
+  minHeight: 25
+  maxHeight: 100
 --- !u!114 &431089382
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -435,6 +435,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: feb7e8efdd9280f44b6672b1fcb6574e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  parent: {fileID: 0}
   riverPointPrefab: {fileID: 6956264891214760591, guid: ce1fc0abbf36fb5479cdc01971df6b55,
     type: 3}
   districtRoadPointPrefab: {fileID: 6956264891214760591, guid: 52aad7ccd2bf690409ba9eb1cb1b9e22,
