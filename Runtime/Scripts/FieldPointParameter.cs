@@ -5,7 +5,7 @@ using UnityEngine;
 namespace FieldGenerator
 {
 	[System.Serializable]
-	public class TownParameter
+	public class FieldPointParameter
 	{
 		//シード値
 		[SerializeField]

@@ -5,9 +5,9 @@ using UnityEngine;
 namespace FieldGenerator
 {
 	[System.Serializable]
-	public class TownGenerator
+	public class FieldPointGenerator
 	{
-		public void Initialize(TownParameter parameter)
+		public void Initialize(FieldPointParameter parameter)
 		{
 			this.parameter = parameter;
 
@@ -16,7 +16,7 @@ namespace FieldGenerator
 			connection.Initialize();
 		}
 
-		public IEnumerator GenerateTown()
+		public IEnumerator Generate()
 		{
 			fieldPoints.Clear();
 
@@ -258,13 +258,13 @@ namespace FieldGenerator
 			get => areas;
 		}
 
-		public event System.Action<TownGenerator> OnGenerate;
+		public event System.Action<FieldPointGenerator> OnGenerate;
 
 
 
 		System.Random random;
 
-		TownParameter parameter;
+		FieldPointParameter parameter;
 
 		River river = new River();
 		float riverStepSize = 10;
