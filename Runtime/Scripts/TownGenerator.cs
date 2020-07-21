@@ -277,11 +277,6 @@ namespace FieldGenerator
 
 		PointConnection connection = new PointConnection();
 
-		ObjectPlacer riverPointsPlacer;
-		ObjectPlacer districtRoadPointPlacer;
-		ObjectPlacer roadAlongRiverPointPlacer;
-		ObjectPlacer gridRoadPointPlacer;
-
 		List<SurroundedArea> areas = new List<SurroundedArea>();
 
 		Dictionary<int, HashSet<int>> combination = new Dictionary<int, HashSet<int>>();
