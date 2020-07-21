@@ -157,7 +157,6 @@ MonoBehaviour:
   - {fileID: 2837942328700987265, guid: c975eb6074b7450449c92055ebab1d69, type: 3}
   - {fileID: 1814401110376950433, guid: fdbc2becd3bad5e47b53d9d8dd7fef5a, type: 3}
   SugorokuScript: {fileID: 800193617}
-  TownScript: {fileID: 1863696403}
 --- !u!114 &800193617
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -187,7 +186,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 5
+  m_RootOrder: 4
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &893073752
 PrefabInstance:
@@ -249,7 +248,7 @@ PrefabInstance:
     - target: {fileID: 8081030270548370081, guid: 357541694c7cd7047bcc799698d89132,
         type: 3}
       propertyPath: m_RootOrder
-      value: 4
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 8081030270548370081, guid: 357541694c7cd7047bcc799698d89132,
         type: 3}
@@ -389,7 +388,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b4d86a6dd0d259843a929b1211a60ec2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  townScript: {fileID: 1863696403}
+  townParameter:
+    seed: 0
+    chunkSize: 100
+    numberOfChunk: {x: 10, y: 10}
+    headwaterIsOutside: 1
+    riverWidth: 10
+    angleRange: 60
+    branchingProbability: 1
+    minNumStepToBranch: 10
+    bendabilityAttenuation: 0.01
+    roadWidth: 4
+    distanceFromRiver: 2
+    roadSpacing: 20
   objectTable:
   - {fileID: 3226630355585294126, guid: 302d9a7ef8a6e824d84cd215b9b274a3, type: 3}
   - {fileID: 1814401110376950433, guid: fdbc2becd3bad5e47b53d9d8dd7fef5a, type: 3}
@@ -409,7 +420,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 6
+  m_RootOrder: 5
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1299399974
 GameObject:
@@ -441,7 +452,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   objectTable: []
-  townScript: {fileID: 0}
 --- !u!4 &1299399976
 Transform:
   m_ObjectHideFlags: 0
@@ -454,7 +464,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 3
+  m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1554030598
 GameObject:
@@ -539,104 +549,3 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 65, y: -20, z: 0}
---- !u!1001 &1863696402
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 4935998598909745944, guid: 649b189431f747542aade49ced6cca4d,
-        type: 3}
-      propertyPath: m_Name
-      value: FieldManager
-      objectReference: {fileID: 0}
-    - target: {fileID: 4935998598909745946, guid: 649b189431f747542aade49ced6cca4d,
-        type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4935998598909745946, guid: 649b189431f747542aade49ced6cca4d,
-        type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4935998598909745946, guid: 649b189431f747542aade49ced6cca4d,
-        type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4935998598909745946, guid: 649b189431f747542aade49ced6cca4d,
-        type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4935998598909745946, guid: 649b189431f747542aade49ced6cca4d,
-        type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4935998598909745946, guid: 649b189431f747542aade49ced6cca4d,
-        type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4935998598909745946, guid: 649b189431f747542aade49ced6cca4d,
-        type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4935998598909745946, guid: 649b189431f747542aade49ced6cca4d,
-        type: 3}
-      propertyPath: m_RootOrder
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 4935998598909745946, guid: 649b189431f747542aade49ced6cca4d,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4935998598909745946, guid: 649b189431f747542aade49ced6cca4d,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4935998598909745946, guid: 649b189431f747542aade49ced6cca4d,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4935998598909745947, guid: 649b189431f747542aade49ced6cca4d,
-        type: 3}
-      propertyPath: numberOfChunk.x
-      value: 6
-      objectReference: {fileID: 0}
-    - target: {fileID: 4935998598909745947, guid: 649b189431f747542aade49ced6cca4d,
-        type: 3}
-      propertyPath: numberOfChunk.y
-      value: 6
-      objectReference: {fileID: 0}
-    - target: {fileID: 4935998598909745947, guid: 649b189431f747542aade49ced6cca4d,
-        type: 3}
-      propertyPath: roadSpacing
-      value: 30
-      objectReference: {fileID: 0}
-    - target: {fileID: 4935998598909745947, guid: 649b189431f747542aade49ced6cca4d,
-        type: 3}
-      propertyPath: parent
-      value: 
-      objectReference: {fileID: 1085186247}
-    m_RemovedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 649b189431f747542aade49ced6cca4d, type: 3}
---- !u!114 &1863696403 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 4935998598909745947, guid: 649b189431f747542aade49ced6cca4d,
-    type: 3}
-  m_PrefabInstance: {fileID: 1863696402}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: feb7e8efdd9280f44b6672b1fcb6574e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 

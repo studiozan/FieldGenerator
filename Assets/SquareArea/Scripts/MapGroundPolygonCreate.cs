@@ -27,8 +27,8 @@ namespace MapPolygon
 
 		void GetData()
 		{
-			RoadPointList = TownScript.GetRoadConnectPointList();
-			RoadPointList = TownScript.GetSugorokuConnectPointList();
+			RoadPointList = fieldPointScript.GetRoadConnectPointList();
+			RoadPointList = fieldPointScript.GetSugorokuConnectPointList();
 			PointStateList.Clear();
 
 			if( RoadPointList == null)
@@ -140,6 +140,6 @@ namespace MapPolygon
 		GameObject[] ObjectTable = default;			/* オブジェクトテーブル */
 
 		[SerializeField]
-		TownGenerator TownScript = default;
+		FieldPointGenerator fieldPointScript = default;
 	}
 }

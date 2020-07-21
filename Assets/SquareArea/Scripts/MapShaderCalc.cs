@@ -37,7 +37,7 @@ public class MapShaderCalc : MonoBehaviour
 		//ObjectCreate( townScript.GetSugorokuConnectPointList());
 
 		List<FieldConnectPoint> point_list;
-		point_list = townScript.GetSugorokuConnectPointList();
+		point_list = fieldPointScript.GetSugorokuConnectPointList();
 		//point_list = townScript.GetRoadConnectPointList();
 		var minSize = new Vector3( 0f, 0f, 0f);
 		var maxSize = new Vector3( 500f, 0f, 500f);
@@ -145,7 +145,7 @@ public class MapShaderCalc : MonoBehaviour
 	GameObject[] objectTable = default;
 
 	[SerializeField]
-	TownGenerator townScript = default;
+	FieldPointGenerator fieldPointScript = default;
 #if false
 	[SerializeField]
 	MeshCreator test_mesh = default;

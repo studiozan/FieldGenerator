@@ -43,7 +43,7 @@ namespace FieldGenerator
 
 		public List<FieldConnectPoint> GetSugorokuList()
 		{
-			return TownScript.GetSugorokuConnectPointList();
+			return fieldPointScript.GetSugorokuConnectPointList();
 		}
 
 		void VecCreate()
@@ -127,7 +127,7 @@ namespace FieldGenerator
 				FieldPointList.Add( tmp_point);
 			}
 #else
-			FieldPointList.AddRange( TownScript.GetFieldPoints());
+			FieldPointList.AddRange( fieldPointScript.GetFieldPoints());
 #endif
 		}
 
@@ -390,6 +390,6 @@ namespace FieldGenerator
 		SugorokuMapCreater SugorokuScript = default;
 
 		[SerializeField]
-		TownGenerator TownScript = default;
+		FieldPointGenerator fieldPointScript = default;
 	}
 }

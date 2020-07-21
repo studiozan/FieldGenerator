@@ -29,7 +29,7 @@ public class SugorokuMapCheck : MonoBehaviour
 		
 		mapGroundScript.SetObject( objectTable[ 3]);
 		
-		townScript.Initialize();
+		fieldPointScript.Initialize( fieldPointParameter);
 		sugorokuScript.Initialize();
 	}
 
@@ -46,18 +46,18 @@ public class SugorokuMapCheck : MonoBehaviour
 	void Initialize()
 	{
 		/*! マップの頂点の生成 */
-		StartCoroutine( townScript.GenerateTown());
+		StartCoroutine( fieldPointScript.Generate());
 		/*! 川のポリゴンの生成 */
-		StartCoroutine( riverPolygonScript.CreatePolygon( townScript.GetRiverConnectPointList(), townScript.RiverWidth));
+		StartCoroutine( riverPolygonScript.CreatePolygon( fieldPointScript.GetRiverConnectPointList(), fieldPointScript.RiverWidth));
 		/*! 道路のポリゴンの生成 */
-		StartCoroutine( roadPolygonScript.CreatePolygon( townScript.GetRoadConnectPointList(), townScript.RoadWidth));
+		StartCoroutine( roadPolygonScript.CreatePolygon( fieldPointScript.GetRoadConnectPointList(), fieldPointScript.RoadWidth));
 		//StartCoroutine( roadPolygonScript.CreatePolygon( townScript.GetSugorokuConnectPointList(), townScript.RoadWidth));
 		/*! 地面のポリゴンの生成 */
 		var minSize = new Vector3( 0f, 0f, 0f);
 		var maxSize = new Vector3( 600f, 0f, 600f);
-		StartCoroutine( mapGroundScript.GroundPolygonCreate( gameObject.transform, townScript.GetRoadConnectPointList(), minSize, maxSize));
+		StartCoroutine( mapGroundScript.GroundPolygonCreate( gameObject.transform, fieldPointScript.GetRoadConnectPointList(), minSize, maxSize));
 
-		sugorokuScript.SetPointList(townScript.GetSugorokuConnectPointList());
+		sugorokuScript.SetPointList(fieldPointScript.GetSugorokuConnectPointList());
 		/*! すごろくマップの生成 */
 		StartCoroutine( sugorokuScript.SugorokuMapCreate());
 
@@ -130,9 +130,10 @@ public class SugorokuMapCheck : MonoBehaviour
 	[SerializeField, HideInInspector]
 	MapGroundPolygonCreator mapGroundScript = default;
 
+	[SerializeField, HideInInspector]
+	FieldPointGenerator fieldPointScript = default;
 	[SerializeField]
-	TownGenerator townScript = default;
-
+	FieldPointParameter fieldPointParameter = default;
 	[SerializeField]
 	GameObject[] objectTable = default;
 }
