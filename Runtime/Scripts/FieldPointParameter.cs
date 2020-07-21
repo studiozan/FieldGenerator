@@ -43,5 +43,8 @@ namespace FieldGenerator
 		//碁盤目状道路の間隔
 		[SerializeField]
 		public float roadSpacing = 20;
+		//道路に囲まれたエリアを内側に寄せる量
+		[SerializeField]
+		public float amountInwardMovement = 6;
 	}
 }

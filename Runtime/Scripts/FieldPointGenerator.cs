@@ -88,7 +88,7 @@ namespace FieldGenerator
 						if (IsExistCombination(areaPoints) == false)
 						{
 							AddCombination(areaPoints);
-							List<Vector3> innerPoints = InnerArea(areaPoints, parameter.roadWidth * 1.5f);
+							List<Vector3> innerPoints = InnerArea(areaPoints, parameter.amountInwardMovement);
 							Vector3 dir1 = innerPoints[1] - innerPoints[0];
 							Vector3 dir2 = innerPoints[2] - innerPoints[1];
 							if (Vector3.Cross(dir1, dir2).y < 0)
@@ -143,7 +143,7 @@ namespace FieldGenerator
 			return center;
 		}
 
-		List<Vector3> InnerArea(List<FieldConnectPoint> areaPoints, float width)
+		List<Vector3> InnerArea(List<FieldConnectPoint> areaPoints, float amount)
 		{
 			var innerPoints = new List<Vector3>();
 
@@ -154,7 +154,7 @@ namespace FieldGenerator
 				Vector3 point = areaPoints[i0].Position;
 				Vector3 dir = center - point;
 				dir.Normalize();
-				dir *= width;
+				dir *= amount;
 				innerPoints.Add(point + dir);
 			}
 
