@@ -81,24 +81,28 @@ namespace FieldGenerator
 				List<FieldConnectPoint> connectPoints = point.ConnectionList;
 				for (int i1 = 0; i1 < connectPoints.Count; ++i1)
 				{
-					var areaPoints = new List<Vector3>();
+					var areaPoints = new List<FieldConnectPoint>();
 					if (TryDetectSurroundedAreaRecursive(connectPoints[i1], areaPoints, point.Index, point.Index, 3) != false)
 					{
-						areaPoints.Add(point.Position);
-						areaPoints = InnerArea(areaPoints, parameter.roadWidth * 1.5f);
-						Vector3 dir1 = areaPoints[1] - areaPoints[0];
-						Vector3 dir2 = areaPoints[2] - areaPoints[1];
-						if (Vector3.Cross(dir1, dir2).y < 0)
+						areaPoints.Add(point);
+						if (IsExistCombination(areaPoints) == false)
 						{
-							areaPoints.Reverse();
+							AddCombination(areaPoints);
+							List<Vector3> innerPoints = InnerArea(areaPoints, parameter.roadWidth * 1.5f);
+							Vector3 dir1 = innerPoints[1] - innerPoints[0];
+							Vector3 dir2 = innerPoints[2] - innerPoints[1];
+							if (Vector3.Cross(dir1, dir2).y < 0)
+							{
+								innerPoints.Reverse();
+							}
+							areas.Add(new SurroundedArea { AreaPoints = innerPoints });
 						}
-						areas.Add(new SurroundedArea { AreaPoints = areaPoints });
 					}
 				}
 			}
 		}
 
-		bool TryDetectSurroundedAreaRecursive(FieldConnectPoint point, List<Vector3> areaPoints, int targetIndex, int prevIndex, int count)
+		bool TryDetectSurroundedAreaRecursive(FieldConnectPoint point, List<FieldConnectPoint> areaPoints, int targetIndex, int prevIndex, int count)
 		{
 			if (count > 0)
 			{
@@ -111,13 +115,13 @@ namespace FieldGenerator
 					{
 						if (connectIndex == targetIndex)
 						{
-							areaPoints.Add(point.Position);
+							areaPoints.Add(point);
 							return true;
 						}
 
 						if (TryDetectSurroundedAreaRecursive(connectPoint, areaPoints, targetIndex, point.Index, count - 1) != false)
 						{
-							areaPoints.Add(point.Position);
+							areaPoints.Add(point);
 							return true;
 						}
 					}
@@ -127,20 +131,27 @@ namespace FieldGenerator
 			return false;
 		}
 
-		List<Vector3> InnerArea(List<Vector3> areaPoints, float width)
+		Vector3 CalcCenter(List<FieldConnectPoint> points)
+		{
+			Vector3 center = Vector3.zero;
+			for (int i0 = 0; i0 < points.Count; ++i0)
+			{
+				center += points[i0].Position;
+			}
+			center /= points.Count;
+
+			return center;
+		}
+
+		List<Vector3> InnerArea(List<FieldConnectPoint> areaPoints, float width)
 		{
 			var innerPoints = new List<Vector3>();
 
-			Vector3 center = Vector3.zero;
-			for (int i0 = 0; i0 < areaPoints.Count; ++i0)
-			{
-				center += areaPoints[i0];
-			}
-			center /= areaPoints.Count;
+			Vector3 center = CalcCenter(areaPoints);
 
 			for (int i0 = 0; i0 < areaPoints.Count; ++i0)
 			{
-				Vector3 point = areaPoints[i0];
+				Vector3 point = areaPoints[i0].Position;
 				Vector3 dir = center - point;
 				dir.Normalize();
 				dir *= width;
@@ -148,6 +159,58 @@ namespace FieldGenerator
 			}
 
 			return innerPoints;
+		}
+
+		bool IsExistCombination(List<FieldConnectPoint> points)
+		{
+			bool isExist = true;;
+			for (int i0 = 0; i0 < points.Count; ++i0)
+			{
+				isExist = true;
+				FieldConnectPoint point = points[i0];
+				HashSet<int> comb;
+				if (combination.TryGetValue(point.Index, out comb) != false)
+				{
+					for (int i1 = 0; i1 < points.Count; ++i1)
+					{
+						if (i1 != i0)
+						{
+							FieldConnectPoint p = points[i1];
+							if (comb.Contains(p.Index) == false)
+							{
+								isExist = false;
+								break;
+							}
+						}
+					}
+
+					if (isExist != false)
+					{
+						break;
+					}
+				}
+				else
+				{
+					isExist = false;
+				}
+			}
+
+			return isExist;
+		}
+
+		void AddCombination(List<FieldConnectPoint> points)
+		{
+			int key = points[0].Index;
+			if (combination.TryGetValue(key, out HashSet<int> set) == false)
+			{
+				set = new HashSet<int>();
+				combination.Add(key, set);
+			}
+
+			for (int i0 = 1; i0 < points.Count; ++i0)
+			{
+				set.Add(points[i0].Index);
+			}
 		}
 
 		public List<FieldPoint> GetFieldPoints()
@@ -220,5 +283,7 @@ namespace FieldGenerator
 		ObjectPlacer gridRoadPointPlacer;
 
 		List<SurroundedArea> areas = new List<SurroundedArea>();
+
+		Dictionary<int, HashSet<int>> combination = new Dictionary<int, HashSet<int>>();
 	}
 }
