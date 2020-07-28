@@ -25,6 +25,9 @@ namespace FieldGenerator
 		//川が曲がる角度の範囲
 		[SerializeField]
 		public float angleRange = 60;
+		//川生成時の次の点までの距離
+		[SerializeField]
+		public float riverStepSize = 10;
 		//川が分岐する確率
 		[SerializeField]
 		public float branchingProbability = 1.0f;

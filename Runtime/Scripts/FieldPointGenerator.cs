@@ -23,7 +23,7 @@ namespace FieldGenerator
 			GenerateRiver();
 			GenerateRoad();
 
-			connection.FieldConnectCreate(fieldPoints, parameter.roadWidth + parameter.roadSpacing, riverStepSize);
+			connection.FieldConnectCreate(fieldPoints, parameter.roadWidth + parameter.roadSpacing, parameter.riverStepSize);
 
 			DetectSurroundedArea();
 
@@ -41,7 +41,7 @@ namespace FieldGenerator
 				HeadwaterIsOutside = parameter.headwaterIsOutside,
 				Width = parameter.riverWidth,
 				AngleRange = parameter.angleRange,
-				StepSize = riverStepSize,
+				StepSize = parameter.riverStepSize,
 				BranchingProbability = parameter.branchingProbability,
 				MinNumStepToBranch = parameter.minNumStepToBranch,
 				BendabilityAttenuation = parameter.bendabilityAttenuation,
@@ -267,7 +267,6 @@ namespace FieldGenerator
 		FieldPointParameter parameter;
 
 		River river = new River();
-		float riverStepSize = 10;
 
 
 		Road road = new Road();

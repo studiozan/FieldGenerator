@@ -52,10 +52,15 @@ namespace FieldGenerator
 		void GenerateRoadAlongRiver(RiverPoint riverRoot)
 		{
 			roadAlongRiverPoints.Clear();
+			leftRoadPoints.Clear();
+			rightRoadPoints.Clear();
 			for (int i0 = 0; i0 < riverRoot.NextPoints.Count; ++i0)
 			{
 				GenerateRoadAlongRiverRecursive(riverRoot, riverRoot.NextPoints[i0]);
 			}
+
+			roadAlongRiverPoints.AddRange(leftRoadPoints);
+			roadAlongRiverPoints.AddRange(rightRoadPoints);
 
 			points.AddRange(roadAlongRiverPoints);
 		}
@@ -76,7 +81,7 @@ namespace FieldGenerator
 					Position = left,
 					Type = PointType.kRoadAlongRiver,
 				};
-				roadAlongRiverPoints.Add(leftPoint);
+				leftRoadPoints.Add(leftPoint);
 			}
 			Vector3 right = rotation * rightBase + currentPoint.Position;
 			if (river.Contain(right) == false)
@@ -86,7 +91,7 @@ namespace FieldGenerator
 					Position = right,
 					Type = PointType.kRoadAlongRiver,
 				};
-				roadAlongRiverPoints.Add(rightPoint);
+				rightRoadPoints.Add(rightPoint);
 			}
 
 			if (nextPoint.NextPoints.Count > 0)
@@ -106,7 +111,7 @@ namespace FieldGenerator
 						Position = nextLeft,
 						Type = PointType.kRoadAlongRiver,
 					};
-					roadAlongRiverPoints.Add(leftPoint2);
+					leftRoadPoints.Add(leftPoint2);
 				}
 				Vector3 nextRight = rotation * rightBase + nextPoint.Position;
 				if (river.Contain(nextRight) == false)
@@ -116,7 +121,7 @@ namespace FieldGenerator
 						Position = nextRight,
 						Type = PointType.kRoadAlongRiver, 
 					};
-					roadAlongRiverPoints.Add(rightPoint2);
+					rightRoadPoints.Add(rightPoint2);
 				}
 			}
 		}
@@ -446,6 +451,9 @@ namespace FieldGenerator
 		List<FieldPoint> districtRoadPoints = new List<FieldPoint>();
 		List<FieldPoint> roadAlongRiverPoints = new List<FieldPoint>();
 		List<FieldPoint> gridRoadPoints = new List<FieldPoint>();
+
+		List<FieldPoint> leftRoadPoints = new List<FieldPoint>();
+		List<FieldPoint> rightRoadPoints = new List<FieldPoint>();
 
 		float thinningDistance;
 	}
