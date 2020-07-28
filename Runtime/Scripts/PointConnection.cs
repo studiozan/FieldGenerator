@@ -49,7 +49,7 @@ namespace FieldGenerator
 			{
 				power = 1f;
 			}
-			SetConnection( sugorokuConnectPointList, interval * ( power * 2f - 1f), false, interval * power);
+			SetConnection( sugorokuConnectPointList, interval * ( power * 2f - 1f), false, interval * power, 100f);
 		}
 
 		/**
@@ -122,11 +122,12 @@ namespace FieldGenerator
 		 * @param interval		繋がる座標感の幅
 		 * @param inOrder		順番通りに繋げるフラグ。川のように座標が順番に生成されるような時にtrueにする
 		 * @param mergeSize		頂点を融合させる時の判定サイズ
+		 * @param ofsetSize		外周からのオフセットサイズ、外周からこのサイズ分内側でのみ接続を行う
 		 * @param random		接続する確率
 		 * @param maxNum		接続する最大数。-1の場合は判定しない
 		 */
 		public void SetConnection( List<FieldConnectPoint> pointList, float interval, bool inOrder = false, float mergeSize = 0f,
-			float random = 1f, int maxNum = -1)
+			float ofsetSize = 0f, float random = 1f, int maxNum = -1)
 		{
 			int i0, i1, i2, index, randomCount, count;
 			float itv, length, checkTheta = 0.707f, theta, rand;
@@ -150,7 +151,13 @@ namespace FieldGenerator
 				/* 頂点を間引く処理 */
 				FieldPointMerge( pointList, mergeSize);
 			}
-
+#if false
+			/* 外周から一定範囲の点を間引く処理 */
+			if( ofsetSize > 0f)
+			{
+				OuterPointThinning( pointList, ofsetSize);
+			}
+#endif
 			for( i0 = 0; i0 < pointList.Count; ++i0)
 			{
 				currentPoint = pointList[ i0];
@@ -166,6 +173,7 @@ namespace FieldGenerator
 					continue;
 				}
 				// TODO: 4方向だけに繋げるための初期化だが、すでに接続してる物がある場合を考慮していなかったので、繋げているものがある場合はその値で初期化するように変更したい
+				//			試してみた結果、繋がりそうで繋がっていない場所が多数発生したので、別の方法を考える。
 				min[ 0] = itv;	min[ 1] = itv;	min[ 2] = itv;	min[ 3] = itv;
 				no[ 0] = -1;	no[ 1] = -1;	no[ 2] = -1;	no[ 3] = -1;
 				orderFlag = false;
@@ -193,6 +201,22 @@ namespace FieldGenerator
 					{
 						/* 同じものは判定しない */
 						continue;
+					}
+					if( currentPoint.Type == PointType.kRoadAlongRiver)
+					{
+						if( pointList[ i1].Type == PointType.kRoadAlongRiver)
+						{
+							/* 川沿いの道路は川と同じように前後の座標と結ぶようにする */
+							if( i1 != i0 + 2)
+							{
+								continue;
+							}
+						}
+						else
+						{
+							/* 川沿いから繋ぐ場合は、川沿いの道路とだけ接続する */
+							continue;
+						}
 					}
 					sub = pointList[ i1].Position - currentPoint.Position;
 					length = sub.x * sub.x + sub.z * sub.z;
@@ -278,6 +302,75 @@ namespace FieldGenerator
 					pointList.RemoveAt( indexList[ i1]);
 				}
 			}
+		}
+
+		/**
+		 * 外周から指定された範囲内のポイントを間引く処理
+		 */
+		void OuterPointThinning( List<FieldConnectPoint> pointList, float ofset)
+		{
+			int i0;
+			Vector3 min, max;
+			var indexList = new List<int>();
+			float sub;
+
+			min = new Vector3( float.MaxValue, 0f, float.MaxValue);
+			max = new Vector3( float.MinValue, 0f, float.MinValue);
+			for( i0 = 0; i0 < pointList.Count; ++i0)
+			{
+				if( min.x > pointList[ i0].Position.x)
+				{
+					min.x = pointList[ i0].Position.x;
+				}
+				else if( max.x < pointList[ i0].Position.x)
+				{
+					max.x = pointList[ i0].Position.x;
+				}
+				if( min.z > pointList[ i0].Position.z)
+				{
+					min.z = pointList[ i0].Position.z;
+				}
+				else if( max.z < pointList[ i0].Position.z)
+				{
+					max.z = pointList[ i0].Position.z;
+				}
+			}
+			sub = max.x - min.x;
+			if( sub > ofset * 2f)
+			{
+				min.x += ofset;
+				max.x -= ofset;
+			}
+			sub = max.z - min.z;
+			if( sub > ofset * 2f)
+			{
+				min.z += ofset;
+				max.z -= ofset;
+			}
+			for( i0 = 0; i0 < pointList.Count; ++i0)
+			{
+				if( min.x > pointList[ i0].Position.x)
+				{
+					indexList.Add( i0);
+					continue;
+				}
+				if( min.z > pointList[ i0].Position.z)
+				{
+					indexList.Add( i0);
+					continue;
+				}
+				if( max.x < pointList[ i0].Position.x)
+				{
+					indexList.Add( i0);
+					continue;
+				}
+				if( max.z < pointList[ i0].Position.z)
+				{
+					indexList.Add( i0);
+					continue;
+				}
+			}
+			Debug.Log($"point:{pointList.Count} out:{indexList.Count} min:{min} max:{max}");
 		}
 
 		/**
