@@ -207,7 +207,7 @@ namespace FieldGenerator
 						if( pointList[ i1].Type == PointType.kRoadAlongRiver)
 						{
 							/* 川沿いの道路は川と同じように前後の座標と結ぶようにする */
-							if( i1 != i0 + 2)
+							if( i1 != i0 + 1)
 							{
 								continue;
 							}
