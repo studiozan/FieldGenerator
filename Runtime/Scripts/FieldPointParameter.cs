@@ -19,21 +19,30 @@ namespace FieldGenerator
 		//川の源流が外側にあるか
 		[SerializeField]
 		public bool headwaterIsOutside = true;
-		//川の幅
+		//川の初期の幅の最小
 		[SerializeField]
-		public float riverWidth = 10;
+		public float minInitialRiverWidth = 10;
+		//川の初期の幅の最大
+		[SerializeField]
+		public float maxInitialRiverWidth = 30;
 		//川が曲がる角度の範囲
 		[SerializeField]
 		public float angleRange = 60;
 		//川生成時の次の点までの距離
 		[SerializeField]
 		public float riverStepSize = 10;
-		//川が分岐する確率
+		//川の分岐率の初期値の最小
 		[SerializeField]
-		public float branchingProbability = 1.0f;
-		//川が分岐するための最低ステップ数
+		public float minInitialBranchingProbability = 0;
+		//川の分岐率の初期値の最大
 		[SerializeField]
-		public int minNumStepToBranch = 10;
+		public float maxInitialBranchingProbability = 1;
+		//川が分岐しないステップ数の最小
+		[SerializeField]
+		public int minNumStepWithoutBranching = 10;
+		//川が分岐しないステップ数の最大
+		[SerializeField]
+		public int maxNumStepWithoutBranching = 30;
 		//川の曲がりやすさの減衰量
 		[SerializeField]
 		public float bendabilityAttenuation = 0.01f;

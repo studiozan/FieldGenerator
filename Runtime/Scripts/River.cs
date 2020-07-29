@@ -10,6 +10,9 @@ namespace FieldGenerator
 		{
 			this.parameter = parameter;
 			this.random = random;
+			width = Mathf.Lerp(parameter.MinInitialWidth, parameter.MaxInitialWidth, (float)random.NextDouble());
+			branchingProbability = CalcBranchingProbability();
+			numStepWithoutBranching = CalcNumStepWithoutBranching();
 			points.Clear();
 			vertices.Clear();
 			float chunkSize = parameter.ChunkSize;
@@ -52,7 +55,7 @@ namespace FieldGenerator
 
 			rootPoint = new RiverPoint();
 			rootPoint.Position = initialPoint;
-			rootPoint.Width = parameter.Width;
+			rootPoint.Width = width;
 			var step = new Vector3(0, 0, parameter.StepSize);
 
 			Vector3 initialDir = Quaternion.Euler(0, initialAngle, 0) * step;
@@ -75,7 +78,6 @@ namespace FieldGenerator
 			int totalStep = 0;
 			float bend = bendability;
 			float angleRange = parameter.AngleRange;
-			float width = parameter.Width;
 
 			Quaternion nextRotation = Quaternion.identity;
 
@@ -113,11 +115,13 @@ namespace FieldGenerator
 				vertices.Add(right);
 				//-----------------------------------
 
-				if (numStep >= parameter.MinNumStepToBranch)
+				if (numStep >= numStepWithoutBranching)
 				{
-					if (DetectFromPercent(parameter.BranchingProbability) != false)
+					if (DetectFromPercent(branchingProbability) != false)
 					{
 						numStep = 0;
+						branchingProbability = CalcBranchingProbability();
+						numStepWithoutBranching = CalcNumStepWithoutBranching();
 						float angle2 = angle + angleRange / 2 * (random.Next(2) == 0 ? -1 : 1);
 						Vector3 nextDir2 = Quaternion.Euler(0, angle2, 0) * step;
 						GenerateRiverRecursive(prevPoint, nextDir2, bend);
@@ -227,6 +231,16 @@ namespace FieldGenerator
 			return new Vector2Int(x, y);
 		}
 
+		float CalcBranchingProbability()
+		{
+			return Mathf.Lerp(parameter.MinInitialBranchingProbability, parameter.MaxInitialBranchingProbability, (float)random.NextDouble());
+		}
+
+		int CalcNumStepWithoutBranching()
+		{
+			return random.Next(parameter.MinNumStepWithoutBranching, parameter.MaxNumStepWithoutBranching + 1);
+		}
+
 		public List<FieldPoint> Points
 		{
 			get => points;
@@ -239,7 +253,7 @@ namespace FieldGenerator
 
 		public float Width
 		{
-			get => parameter.Width;
+			get => width;
 		}
 
 		System.Random random;
@@ -247,7 +261,9 @@ namespace FieldGenerator
 		List<FieldPoint> points = new List<FieldPoint>();
 		RiverPoint rootPoint;
 		RiverParameter parameter;
-
 		List<Vector3> vertices = new List<Vector3>();
+		float width;
+		float branchingProbability;
+		int numStepWithoutBranching;
 	}
 }

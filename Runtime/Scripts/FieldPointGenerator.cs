@@ -39,11 +39,14 @@ namespace FieldGenerator
 				ChunkSize = parameter.chunkSize,
 				NumberOfChunk = parameter.numberOfChunk,
 				HeadwaterIsOutside = parameter.headwaterIsOutside,
-				Width = parameter.riverWidth,
+				MinInitialWidth = parameter.minInitialRiverWidth,
+				MaxInitialWidth = parameter.maxInitialRiverWidth,
 				AngleRange = parameter.angleRange,
 				StepSize = parameter.riverStepSize,
-				BranchingProbability = parameter.branchingProbability,
-				MinNumStepToBranch = parameter.minNumStepToBranch,
+				MinInitialBranchingProbability = parameter.minInitialBranchingProbability,
+				MaxInitialBranchingProbability = parameter.maxInitialBranchingProbability,
+				MinNumStepWithoutBranching = parameter.minNumStepWithoutBranching,
+				MaxNumStepWithoutBranching = parameter.maxNumStepWithoutBranching,
 				BendabilityAttenuation = parameter.bendabilityAttenuation,
 			};
 
@@ -245,7 +248,7 @@ namespace FieldGenerator
 
 		public float RiverWidth
 		{
-			get => parameter.riverWidth;
+			get => river.Width;
 		}
 
 		public float RoadWidth
