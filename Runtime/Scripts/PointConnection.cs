@@ -34,7 +34,7 @@ namespace FieldGenerator
 		 * @param sugorokuOfset	すごろく用の接続座標を外周から指定された距離分を間引く時の値
 		 */
 		public void FieldConnectCreate( List<FieldPoint> fieldList, float interval, float riverInterval = 10f, float sugorokuMergeMulti = 1.75f,
-			float sugorokuOfset = 250f)
+			float sugorokuOfset = 1000f)
 		{
 			/* フィールドの座標情報のリストを設定 */
 			fieldPointList = fieldList;
@@ -375,11 +375,13 @@ namespace FieldGenerator
 					continue;
 				}
 			}
-			for( i0 = indexList.Count - 1; i0 >= 0; --i0)
+			if( pointList.Count > indexList.Count)
 			{
-				pointList.RemoveAt( indexList[ i0]);
+				for( i0 = indexList.Count - 1; i0 >= 0; --i0)
+				{
+					pointList.RemoveAt( indexList[ i0]);
+				}
 			}
-			Debug.Log($"point:{pointList.Count} out:{indexList.Count} min:{min} max:{max}");
 		}
 
 		/**
