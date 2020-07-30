@@ -31,8 +31,10 @@ namespace FieldGenerator
 		 * @param interval		接続を行う道路の座標の間隔
 		 * @param riverInterval	接続を行う川の座標の間隔
 		 * @param sugorokuMergeMulti	すごろく用の接続座標を間引く範囲の倍率
+		 * @param sugorokuOfset	すごろく用の接続座標を外周から指定された距離分を間引く時の値
 		 */
-		public void FieldConnectCreate( List<FieldPoint> fieldList, float interval, float riverInterval = 10f, float sugorokuMergeMulti = 1.75f)
+		public void FieldConnectCreate( List<FieldPoint> fieldList, float interval, float riverInterval = 10f, float sugorokuMergeMulti = 1.75f,
+			float sugorokuOfset = 250f)
 		{
 			/* フィールドの座標情報のリストを設定 */
 			fieldPointList = fieldList;
@@ -49,7 +51,7 @@ namespace FieldGenerator
 			{
 				power = 1f;
 			}
-			SetConnection( sugorokuConnectPointList, interval * ( power * 2f - 1f), false, interval * power, 100f);
+			SetConnection( sugorokuConnectPointList, interval * ( power * 2f - 1f), false, interval * power, sugorokuOfset);
 		}
 
 		/**
@@ -151,13 +153,11 @@ namespace FieldGenerator
 				/* 頂点を間引く処理 */
 				FieldPointMerge( pointList, mergeSize);
 			}
-#if false
 			/* 外周から一定範囲の点を間引く処理 */
 			if( ofsetSize > 0f)
 			{
 				OuterPointThinning( pointList, ofsetSize);
 			}
-#endif
 			for( i0 = 0; i0 < pointList.Count; ++i0)
 			{
 				currentPoint = pointList[ i0];
@@ -313,11 +313,16 @@ namespace FieldGenerator
 			Vector3 min, max;
 			var indexList = new List<int>();
 			float sub;
+			float maxSize = 100000f;
 
 			min = new Vector3( float.MaxValue, 0f, float.MaxValue);
 			max = new Vector3( float.MinValue, 0f, float.MinValue);
 			for( i0 = 0; i0 < pointList.Count; ++i0)
 			{
+				if( Mathf.Abs( pointList[ i0].Position.x) >= maxSize || Mathf.Abs( pointList[ i0].Position.z) >= maxSize)
+				{
+					continue;
+				}
 				if( min.x > pointList[ i0].Position.x)
 				{
 					min.x = pointList[ i0].Position.x;
@@ -369,6 +374,10 @@ namespace FieldGenerator
 					indexList.Add( i0);
 					continue;
 				}
+			}
+			for( i0 = indexList.Count - 1; i0 >= 0; --i0)
+			{
+				pointList.RemoveAt( indexList[ i0]);
 			}
 			Debug.Log($"point:{pointList.Count} out:{indexList.Count} min:{min} max:{max}");
 		}
