@@ -23,7 +23,12 @@ namespace FieldGenerator
 			GenerateRiver();
 			GenerateRoad();
 
-			connection.FieldConnectCreate(fieldPoints, parameter.roadWidth + parameter.roadSpacing, parameter.riverStepSize);
+			connection.FieldConnectCreate(
+				fieldPoints,
+				parameter.roadWidth + parameter.roadSpacing,
+				parameter.riverStepSize,
+				parameter.sugorokuMergeMulti,
+				parameter.sugorokuOffset);
 
 			DetectSurroundedArea();
 

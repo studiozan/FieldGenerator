@@ -58,5 +58,11 @@ namespace FieldGenerator
 		//道路に囲まれたエリアを内側に寄せる量
 		[SerializeField]
 		public float amountInwardMovement = 6;
+		//すごろく用の接続座標を間引く範囲の倍率
+		[SerializeField]
+		public float sugorokuMergeMulti = 1.75f;
+		//すごろく用の接続座標を外周から指定された距離分を間引く時の値
+		[SerializeField]
+		public float sugorokuOffset = 1000f;
 	}
 }
