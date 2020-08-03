@@ -269,6 +269,14 @@ namespace FieldGenerator
 				}
 				++randomCount;
 			}
+			/* 孤立している点は削除する */
+			for( i0 = pointList.Count - 1; i0 >= 0; --i0)
+			{
+				if( pointList[ i0].ConnectionList.Count == 0)
+				{
+					pointList.RemoveAt( i0);
+				}
+			}
 		}
 
 		/**
