@@ -13,48 +13,15 @@ namespace FieldGenerator
 			width = Mathf.Lerp(parameter.MinInitialWidth, parameter.MaxInitialWidth, (float)random.NextDouble());
 			branchingProbability = CalcBranchingProbability();
 			numStepWithoutBranching = CalcNumStepWithoutBranching();
+
 			points.Clear();
 			vertices.Clear();
-			float chunkSize = parameter.ChunkSize;
-			Vector2 numberOfChunk = parameter.NumberOfChunk;
-			var fieldSize = new Vector2(chunkSize * numberOfChunk.x, chunkSize * numberOfChunk.y);
-			Vector3 initialPoint = Vector3.zero;
-			initialPoint.x = fieldSize.x * (float)random.NextDouble();
-			initialPoint.z = fieldSize.y * (float)random.NextDouble();
-			float initialAngle;
-			if (parameter.HeadwaterIsOutside != false)
-			{
-				switch (random.Next(4))
-				{
-					//始点が左
-					case 0:
-						initialPoint.x = 0;
-						break;
-					//始点が右
-					case 1:
-						initialPoint.x = fieldSize.x;
-						break;
-					//始点が上
-					case 2:
-						initialPoint.z = fieldSize.y;
-						break;
-					//始点が下
-					case 3:
-						initialPoint.z = 0;
-						break;
-				}
 
-				var center = new Vector3(fieldSize.x / 2, 0, fieldSize.y / 2);
-				Vector3 dirToCenter = center - initialPoint;
-				initialAngle = Mathf.Atan2(dirToCenter.x, dirToCenter.z) * Mathf.Rad2Deg;
-			}
-			else
-			{
-				initialAngle = 360 * (float)random.NextDouble();
-			}
+			Vector3 initialPosition = DecideInitialPosition();
+			float initialAngle = DecideInitialAngle(initialPosition);
 
 			rootPoint = new RiverPoint();
-			rootPoint.Position = initialPoint;
+			rootPoint.Position = initialPosition;
 			rootPoint.Width = width;
 			var step = new Vector3(0, 0, parameter.StepSize);
 
@@ -67,37 +34,57 @@ namespace FieldGenerator
 			};
 			points.Add(point);
 
+			minAngleForBranching = Mathf.Atan2(width * 0.5f, parameter.StepSize) * Mathf.Rad2Deg * 2;
+			canBranch = parameter.AngleRange >= minAngleForBranching;
+
 			GenerateRiverRecursive(rootPoint, initialDir, 1);
 		}
 
 		void GenerateRiverRecursive(RiverPoint riverPoint, Vector3 dir, float bendability)
 		{
-			RiverPoint prevPoint = riverPoint;
-			Vector3 prevDir = dir;
+			RiverPoint currentPoint = riverPoint;
+			Vector3 nextDir = dir;
 			int numStep = 0;
 			int totalStep = 0;
 			float bend = bendability;
 			float angleRange = parameter.AngleRange;
+			float halfWidth = width * 0.5f;
+			var step = new Vector3(0, 0, parameter.StepSize);
 
-			Quaternion nextRotation = Quaternion.identity;
-
-			while (IsInsideField(prevPoint.Position) != false)
+			while (IsInsideField(currentPoint.Position) != false)
 			{
 				++numStep;
 				++totalStep;
-				float prevAngle = Mathf.Atan2(prevDir.x, prevDir.z) * Mathf.Rad2Deg;
-				float angle = angleRange * (float)random.NextDouble() - angleRange / 2;
-				angle += prevAngle;
-
-				var step = new Vector3(0, 0, parameter.StepSize);
-				Vector3 nextDir = Quaternion.Euler(0, angle, 0) * step;
-				bend *= (1.0f - parameter.BendabilityAttenuation);
-				nextDir = Vector3.Lerp(prevDir, nextDir, bend);
 
 				var nextPoint = new RiverPoint();
-				nextPoint.Position = prevPoint.Position + nextDir;
+				nextPoint.Position = currentPoint.Position + nextDir;
 				nextPoint.Width = width;
-				prevPoint.NextPoints.Add(nextPoint);
+				nextPoint.PrevPoint = currentPoint;
+
+				float angle = Mathf.Atan2(nextDir.x, nextDir.z) * Mathf.Rad2Deg;
+
+				Vector3 normDir = nextDir.normalized;
+				var leftBase = new Vector3(-normDir.z, 0, normDir.x) * halfWidth;
+				var rightBase = new Vector3(normDir.z, 0, -normDir.x) * halfWidth;
+				Vector3 left = leftBase + currentPoint.Position;
+				Vector3 right = rightBase + currentPoint.Position;
+				Vector3 left2 = leftBase + nextPoint.Position;
+				Vector3 right2 = rightBase + nextPoint.Position;
+
+				if (canBranch != false && numStep >= numStepWithoutBranching)
+				{
+					if (DetectFromPercent(branchingProbability) != false)
+					{
+						numStep = 0;
+						branchingProbability = CalcBranchingProbability();
+						numStepWithoutBranching = CalcNumStepWithoutBranching();
+						float angle2 = angle + Mathf.Lerp(minAngleForBranching, angleRange, (float)random.NextDouble()) * (random.Next(2) == 0 ? -1 : 1);
+						Vector3 nextDir2 = Quaternion.Euler(0, angle2, 0) * step;
+						GenerateRiverRecursive(currentPoint, nextDir2, bend);
+					}
+				}
+
+				currentPoint.NextPoints.Add(nextPoint);
 
 				var point = new FieldPoint
 				{
@@ -106,41 +93,84 @@ namespace FieldGenerator
 				};
 				points.Add(point);
 
-				//vertices---------------------------
-				float nextAngle = Mathf.Atan2(nextDir.x, nextDir.z) * Mathf.Rad2Deg;
-				nextRotation = Quaternion.Euler(0, nextAngle, 0);
-				Vector3 left = nextRotation * new Vector3(-width / 2, 0, 0) + prevPoint.Position;
-				Vector3 right = nextRotation * new Vector3(width / 2, 0, 0) + prevPoint.Position;
 				vertices.Add(left);
 				vertices.Add(right);
-				//-----------------------------------
 
-				if (numStep >= numStepWithoutBranching)
-				{
-					if (DetectFromPercent(branchingProbability) != false)
-					{
-						numStep = 0;
-						branchingProbability = CalcBranchingProbability();
-						numStepWithoutBranching = CalcNumStepWithoutBranching();
-						float angle2 = angle + angleRange / 2 * (random.Next(2) == 0 ? -1 : 1);
-						Vector3 nextDir2 = Quaternion.Euler(0, angle2, 0) * step;
-						GenerateRiverRecursive(prevPoint, nextDir2, bend);
-					}
-				}
+				float nextAngle = angle + angleRange * (float)random.NextDouble() - angleRange * 0.5f;
+				bend *= (1.0f - parameter.BendabilityAttenuation);
+				nextAngle = Mathf.Lerp(angle, nextAngle, bend);
+				nextDir = Quaternion.Euler(0, nextAngle, 0) * step;
 
-				prevDir = nextDir;
-				prevPoint = nextPoint;
+				currentPoint = nextPoint;
 			}
 
-			//vertices---------------------------
 			if (totalStep != 0)
 			{
-				Vector3 left = nextRotation * new Vector3(-width / 2, 0, 0) + prevPoint.Position;
-				Vector3 right = nextRotation * new Vector3(width / 2, 0, 0) + prevPoint.Position;
+				Vector3 normDir = nextDir.normalized;
+				Vector3 left = new Vector3(-normDir.z, 0, normDir.x) * halfWidth + currentPoint.Position;
+				Vector3 right = new Vector3(normDir.z, 0, -normDir.x) * halfWidth + currentPoint.Position;
 				vertices.Add(left);
 				vertices.Add(right);
 			}
-			//-----------------------------------
+		}
+
+		Vector3 DecideInitialPosition()
+		{
+			var initPos = new Vector3();
+
+			float chunkSize = parameter.ChunkSize;
+			Vector2 numberOfChunk = parameter.NumberOfChunk;
+			var fieldSize = new Vector2(chunkSize * numberOfChunk.x, chunkSize * numberOfChunk.y);
+
+			initPos.x = fieldSize.x * (float)random.NextDouble();
+			initPos.z = fieldSize.y * (float)random.NextDouble();
+
+			if (parameter.HeadwaterIsOutside != false)
+			{
+				switch (random.Next(4))
+				{
+					//始点が左
+					case 0:
+						initPos.x = 0;
+						break;
+					//始点が右
+					case 1:
+						initPos.x = fieldSize.x;
+						break;
+					//始点が上
+					case 2:
+						initPos.z = fieldSize.y;
+						break;
+					//始点が下
+					case 3:
+						initPos.z = 0;
+						break;
+				}
+			}
+
+			return initPos;
+		}
+
+		float DecideInitialAngle(Vector3 initialPosition)
+		{
+			float initAngle = 0;
+
+			float chunkSize = parameter.ChunkSize;
+			Vector2 numberOfChunk = parameter.NumberOfChunk;
+			var fieldSize = new Vector2(chunkSize * numberOfChunk.x, chunkSize * numberOfChunk.y);
+
+			if (parameter.HeadwaterIsOutside != false)
+			{
+				var center = new Vector3(fieldSize.x * 0.5f, 0, fieldSize.y * 0.5f);
+				Vector3 dir = center - initialPosition;
+				initAngle = Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg;
+			}
+			else
+			{
+				initAngle = 360 * (float)random.NextDouble();
+			}
+
+			return initAngle;
 		}
 
 		bool IsInsideField(Vector3 pos)
@@ -167,7 +197,7 @@ namespace FieldGenerator
 			return random.Next(0, maxValue) < border;
 		}
 
-		public bool Contain(Vector3 pos)
+		public bool Covers(Vector3 pos)
 		{
 			bool isInside = false;
 
@@ -265,5 +295,8 @@ namespace FieldGenerator
 		float width;
 		float branchingProbability;
 		int numStepWithoutBranching;
+
+		bool canBranch;
+		float minAngleForBranching;
 	}
 }

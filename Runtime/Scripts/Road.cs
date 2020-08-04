@@ -34,7 +34,7 @@ namespace FieldGenerator
 					float x = chunkSize * column;
 					float z = chunkSize * row;
 					var pos = new Vector3(x, 0, z);
-					if (river.Contain(pos) == false)
+					if (river.Covers(pos) == false)
 					{
 						var point = new FieldPoint
 						{
@@ -74,7 +74,7 @@ namespace FieldGenerator
 			var leftBase = new Vector3(-dist, 0, 0);
 			var rightBase = new Vector3(dist, 0, 0);
 			Vector3 left = rotation * leftBase + currentPoint.Position;
-			if (river.Contain(left) == false)
+			if (river.Covers(left) == false)
 			{
 				var leftPoint = new FieldPoint
 				{
@@ -84,7 +84,7 @@ namespace FieldGenerator
 				leftRoadPoints.Add(leftPoint);
 			}
 			Vector3 right = rotation * rightBase + currentPoint.Position;
-			if (river.Contain(right) == false)
+			if (river.Covers(right) == false)
 			{
 				var rightPoint = new FieldPoint
 				{
@@ -104,7 +104,7 @@ namespace FieldGenerator
 			else
 			{
 				Vector3 nextLeft = rotation * leftBase + nextPoint.Position;
-				if (river.Contain(nextLeft) == false)
+				if (river.Covers(nextLeft) == false)
 				{
 					var leftPoint2 = new FieldPoint
 					{
@@ -114,7 +114,7 @@ namespace FieldGenerator
 					leftRoadPoints.Add(leftPoint2);
 				}
 				Vector3 nextRight = rotation * rightBase + nextPoint.Position;
-				if (river.Contain(nextRight) == false)
+				if (river.Covers(nextRight) == false)
 				{
 					var rightPoint2 = new FieldPoint
 					{
@@ -169,7 +169,7 @@ namespace FieldGenerator
 						p2 = new Vector3(x2, 0, y2);
 					}
 
-					if (river.Contain(p1) == false)
+					if (river.Covers(p1) == false)
 					{
 						var point1 = new FieldPoint
 						{
@@ -181,7 +181,7 @@ namespace FieldGenerator
 							gridRoadPoints.Add(point1);
 						}
 					}
-					if (river.Contain(p2) == false)
+					if (river.Covers(p2) == false)
 					{
 						var point2 = new FieldPoint
 						{
@@ -225,7 +225,7 @@ namespace FieldGenerator
 						pos.z += offsetZ;
 						pos = rotation * pos + p1;
 						basePoints[i0] = pos;
-						if (river.Contain(pos) == false)
+						if (river.Covers(pos) == false)
 						{
 							var point = new FieldPoint
 							{
@@ -252,7 +252,7 @@ namespace FieldGenerator
 						Vector3 leftPoint = leftRot * roadStep + basePoint;
 						while (IsInsideRect(chunkRect, leftPoint) != false)
 						{
-							if (river.Contain(leftPoint) == false)
+							if (river.Covers(leftPoint) == false)
 							{
 								var lp = new FieldPoint
 								{
@@ -287,7 +287,7 @@ namespace FieldGenerator
 							upIntersection.z = chunkRect.y + chunkRect.height;
 							upIntersection.x = (upIntersection.z - bl) / al;
 							Vector3 intersectionL = leftIntersection.x >= upIntersection.x ? leftIntersection : upIntersection;
-							if (river.Contain(intersectionL) == false)
+							if (river.Covers(intersectionL) == false)
 							{
 								var lp = new FieldPoint
 								{
@@ -303,7 +303,7 @@ namespace FieldGenerator
 						else
 						{
 							var pos = new Vector3(0, 0, basePoint.z);
-							if (river.Contain(pos) == false)
+							if (river.Covers(pos) == false)
 							{
 								var lp = new FieldPoint
 								{
@@ -324,7 +324,7 @@ namespace FieldGenerator
 						Vector3 rightPoint = rightRot * roadStep + basePoint;
 						while (IsInsideRect(chunkRect, rightPoint) != false)
 						{
-							if (river.Contain(rightPoint) == false)
+							if (river.Covers(rightPoint) == false)
 							{
 								var rp = new FieldPoint
 								{
@@ -359,7 +359,7 @@ namespace FieldGenerator
 							downIntersection.z = chunkRect.y;
 							downIntersection.x = (downIntersection.z - br) / ar;
 							Vector3 intersectionR = rightIntersection.x <= downIntersection.x ? rightIntersection : downIntersection;
-							if (river.Contain(intersectionR) == false)
+							if (river.Covers(intersectionR) == false)
 							{
 								var rp = new FieldPoint
 								{
@@ -375,7 +375,7 @@ namespace FieldGenerator
 						else
 						{
 							var pos = new Vector3(chunkSize, 0, basePoint.z);
-							if (river.Contain(pos) == false)
+							if (river.Covers(pos) == false)
 							{
 								var rp = new FieldPoint
 								{
