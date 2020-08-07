@@ -20,8 +20,8 @@ namespace FieldGenerator
 		{
 			fieldPoints.Clear();
 
-			GenerateRiver();
-			GenerateRoad();
+			yield return GenerateRiver();
+			yield return GenerateRoad();
 
 			connection.FieldConnectCreate(
 				fieldPoints,
@@ -30,14 +30,12 @@ namespace FieldGenerator
 				parameter.sugorokuMergeMulti,
 				parameter.sugorokuOffset);
 
-			DetectSurroundedArea();
+			yield return DetectSurroundedArea();
 
 			OnGenerate?.Invoke(this);
-
-			yield break;
 		}
 
-		void GenerateRiver()
+		IEnumerator GenerateRiver()
 		{
 			var param = new RiverParameter
 			{
@@ -55,11 +53,11 @@ namespace FieldGenerator
 				BendabilityAttenuation = parameter.bendabilityAttenuation,
 			};
 
-			river.Generate(param, random);
+			yield return river.Generate(param, random);
 			fieldPoints.AddRange(river.Points);
 		}
 
-		void GenerateRoad()
+		IEnumerator GenerateRoad()
 		{
 			var param = new RoadParameter
 			{
@@ -70,12 +68,14 @@ namespace FieldGenerator
 				Spacing = parameter.roadSpacing,
 			};
 
-			road.Generate(param, river, random);
+			yield return road.Generate(param, river, random);
 			fieldPoints.AddRange(road.Points);
 		}
 
-		void DetectSurroundedArea()
+		IEnumerator DetectSurroundedArea()
 		{
+			lastInterruptionTime = System.DateTime.Now;
+
 			areas.Clear();
 			List<FieldConnectPoint> roadConnectPoints = connection.GetRoadConnectPointList();
 			for (int i0 = 0; i0 < roadConnectPoints.Count; ++i0)
@@ -105,6 +105,12 @@ namespace FieldGenerator
 							}
 							areas.Add(new SurroundedArea { AreaPoints = innerPoints });
 						}
+					}
+
+					if (System.DateTime.Now.Subtract(lastInterruptionTime).TotalMilliseconds >= kElapsedTimeToInterrupt)
+					{
+						yield return null;
+						lastInterruptionTime = System.DateTime.Now;
 					}
 				}
 			}
@@ -270,7 +276,13 @@ namespace FieldGenerator
 
 
 
+		public static readonly float kElapsedTimeToInterrupt = 16.7f;
+
+
+
 		System.Random random;
+
+		System.DateTime lastInterruptionTime;
 
 		FieldPointParameter parameter;
 

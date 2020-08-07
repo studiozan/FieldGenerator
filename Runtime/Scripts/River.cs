@@ -6,8 +6,10 @@ namespace FieldGenerator
 {
 	public class River
 	{
-		public void Generate(RiverParameter parameter, System.Random random)
+		public IEnumerator Generate(RiverParameter parameter, System.Random random)
 		{
+			lastInterruptionTime = System.DateTime.Now;
+
 			this.parameter = parameter;
 			this.random = random;
 			width = Mathf.Lerp(parameter.MinInitialWidth, parameter.MaxInitialWidth, (float)random.NextDouble());
@@ -37,10 +39,10 @@ namespace FieldGenerator
 			minAngleForBranching = Mathf.Atan2(width * 0.5f, parameter.StepSize) * Mathf.Rad2Deg * 2;
 			canBranch = parameter.AngleRange >= minAngleForBranching;
 
-			GenerateRiverRecursive(rootPoint, initialDir, 1);
+			yield return GenerateRiverRecursive(rootPoint, initialDir, 1);
 		}
 
-		void GenerateRiverRecursive(RiverPoint riverPoint, Vector3 dir, float bendability)
+		IEnumerator GenerateRiverRecursive(RiverPoint riverPoint, Vector3 dir, float bendability)
 		{
 			RiverPoint currentPoint = riverPoint;
 			Vector3 nextDir = dir;
@@ -71,6 +73,12 @@ namespace FieldGenerator
 				Vector3 left2 = leftBase + nextPoint.Position;
 				Vector3 right2 = rightBase + nextPoint.Position;
 
+				if (System.DateTime.Now.Subtract(lastInterruptionTime).TotalMilliseconds >= FieldPointGenerator.kElapsedTimeToInterrupt)
+				{
+					yield return null;
+					lastInterruptionTime = System.DateTime.Now;
+				}
+
 				if (canBranch != false && numStep >= numStepWithoutBranching)
 				{
 					if (DetectFromPercent(branchingProbability) != false)
@@ -80,7 +88,7 @@ namespace FieldGenerator
 						numStepWithoutBranching = CalcNumStepWithoutBranching();
 						float angle2 = angle + Mathf.Lerp(minAngleForBranching, angleRange, (float)random.NextDouble()) * (random.Next(2) == 0 ? -1 : 1);
 						Vector3 nextDir2 = Quaternion.Euler(0, angle2, 0) * step;
-						GenerateRiverRecursive(currentPoint, nextDir2, bend);
+						yield return GenerateRiverRecursive(currentPoint, nextDir2, bend);
 					}
 				}
 
@@ -287,6 +295,8 @@ namespace FieldGenerator
 		}
 
 		System.Random random;
+
+		System.DateTime lastInterruptionTime;
 
 		List<FieldPoint> points = new List<FieldPoint>();
 		RiverPoint rootPoint;

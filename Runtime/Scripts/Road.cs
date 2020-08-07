@@ -6,8 +6,9 @@ namespace FieldGenerator
 {
 	public class Road
 	{
-		public void Generate(RoadParameter parameter, River river, System.Random random)
+		public IEnumerator Generate(RoadParameter parameter, River river, System.Random random)
 		{
+			lastInterruptionTime = System.DateTime.Now;
 			this.parameter = parameter;
 			this.random = random;
 			this.river = river;
@@ -16,12 +17,12 @@ namespace FieldGenerator
 
 			points.Clear();
 
-			GenerateDistrictRoad();
-			GenerateRoadAlongRiver(river.RootPoint);
-			GenerateGridRoad();
+			yield return GenerateDistrictRoad();
+			yield return GenerateRoadAlongRiver(river.RootPoint);
+			yield return GenerateGridRoad();
 		}
 
-		void GenerateDistrictRoad()
+		IEnumerator GenerateDistrictRoad()
 		{
 			districtRoadPoints.Clear();
 			float chunkSize = parameter.ChunkSize;
@@ -43,20 +44,26 @@ namespace FieldGenerator
 						};
 						districtRoadPoints.Add(point);
 					}
+
+					if (System.DateTime.Now.Subtract(lastInterruptionTime).TotalMilliseconds >= FieldPointGenerator.kElapsedTimeToInterrupt)
+					{
+						yield return null;
+						lastInterruptionTime = System.DateTime.Now;
+					}
 				}
 			}
 
 			points.AddRange(districtRoadPoints);
 		}
 
-		void GenerateRoadAlongRiver(RiverPoint riverRoot)
+		IEnumerator GenerateRoadAlongRiver(RiverPoint riverRoot)
 		{
 			roadAlongRiverPoints.Clear();
 			leftRoadPoints.Clear();
 			rightRoadPoints.Clear();
 			for (int i0 = 0; i0 < riverRoot.NextPoints.Count; ++i0)
 			{
-				GenerateRoadAlongRiverRecursive(riverRoot, riverRoot.NextPoints[i0]);
+				yield return GenerateRoadAlongRiverRecursive(riverRoot, riverRoot.NextPoints[i0]);
 			}
 
 			roadAlongRiverPoints.AddRange(leftRoadPoints);
@@ -65,7 +72,7 @@ namespace FieldGenerator
 			points.AddRange(roadAlongRiverPoints);
 		}
 
-		void GenerateRoadAlongRiverRecursive(RiverPoint currentPoint, RiverPoint nextPoint)
+		IEnumerator GenerateRoadAlongRiverRecursive(RiverPoint currentPoint, RiverPoint nextPoint)
 		{
 			Vector3 dir = nextPoint.Position - currentPoint.Position;
 			float angle = Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg;
@@ -94,11 +101,17 @@ namespace FieldGenerator
 				rightRoadPoints.Add(rightPoint);
 			}
 
+			if (System.DateTime.Now.Subtract(lastInterruptionTime).TotalMilliseconds >= FieldPointGenerator.kElapsedTimeToInterrupt)
+			{
+				yield return null;
+				lastInterruptionTime = System.DateTime.Now;
+			}
+
 			if (nextPoint.NextPoints.Count > 0)
 			{
 				for (int i0 = 0; i0 < nextPoint.NextPoints.Count; ++i0)
 				{
-					GenerateRoadAlongRiverRecursive(nextPoint, nextPoint.NextPoints[i0]);
+					yield return GenerateRoadAlongRiverRecursive(nextPoint, nextPoint.NextPoints[i0]);
 				}
 			}
 			else
@@ -126,7 +139,7 @@ namespace FieldGenerator
 			}
 		}
 
-		void GenerateGridRoad()
+		IEnumerator GenerateGridRoad()
 		{
 			gridRoadPoints.Clear();
 			for (int row = 0; row < parameter.NumberOfChunk.y; ++row)
@@ -391,6 +404,12 @@ namespace FieldGenerator
 						gridRoadPoints.AddRange(rightPoints);
 						//----------------------------
 					}
+
+					if (System.DateTime.Now.Subtract(lastInterruptionTime).TotalMilliseconds >= FieldPointGenerator.kElapsedTimeToInterrupt)
+					{
+						yield return null;
+						lastInterruptionTime = System.DateTime.Now;
+					}
 				}
 			}
 		}
@@ -443,6 +462,8 @@ namespace FieldGenerator
 		}
 
 		System.Random random;
+
+		System.DateTime lastInterruptionTime;
 
 		List<FieldPoint> points = new List<FieldPoint>();
 		RoadParameter parameter;
