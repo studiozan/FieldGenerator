@@ -16,6 +16,7 @@ namespace FieldGenerator
 			thinningDistance = (parameter.Spacing + parameter.Width) * 0.5f;
 
 			points.Clear();
+			pointMap.Clear();
 
 			yield return GenerateDistrictRoad();
 			yield return GenerateRoadAlongRiver(river.RootPoint);
@@ -43,6 +44,7 @@ namespace FieldGenerator
 							Type = PointType.kDistrictRoad,
 						};
 						districtRoadPoints.Add(point);
+						AddToPointMap(point);
 					}
 
 					if (System.DateTime.Now.Subtract(lastInterruptionTime).TotalMilliseconds >= FieldPointGenerator.kElapsedTimeToInterrupt)
@@ -89,6 +91,7 @@ namespace FieldGenerator
 					Type = PointType.kRoadAlongRiver,
 				};
 				leftRoadPoints.Add(leftPoint);
+				AddToPointMap(leftPoint);
 			}
 			Vector3 right = rotation * rightBase + currentPoint.Position;
 			if (river.Covers(right) == false)
@@ -99,6 +102,7 @@ namespace FieldGenerator
 					Type = PointType.kRoadAlongRiver,
 				};
 				rightRoadPoints.Add(rightPoint);
+				AddToPointMap(rightPoint);
 			}
 
 			if (System.DateTime.Now.Subtract(lastInterruptionTime).TotalMilliseconds >= FieldPointGenerator.kElapsedTimeToInterrupt)
@@ -125,6 +129,7 @@ namespace FieldGenerator
 						Type = PointType.kRoadAlongRiver,
 					};
 					leftRoadPoints.Add(leftPoint2);
+					AddToPointMap(leftPoint2);
 				}
 				Vector3 nextRight = rotation * rightBase + nextPoint.Position;
 				if (river.Covers(nextRight) == false)
@@ -132,9 +137,10 @@ namespace FieldGenerator
 					var rightPoint2 = new FieldPoint
 					{
 						Position = nextRight,
-						Type = PointType.kRoadAlongRiver, 
+						Type = PointType.kRoadAlongRiver,
 					};
 					rightRoadPoints.Add(rightPoint2);
+					AddToPointMap(rightPoint2);
 				}
 			}
 		}
@@ -423,12 +429,40 @@ namespace FieldGenerator
 		{
 			bool canAdd = true;
 
-			for (int i0 = 0; i0 < points.Count; ++i0)
+			float chunkSize = parameter.ChunkSize;
+			Vector3 pos = point.Position;
+
+			int minX = Mathf.Max(Mathf.FloorToInt((pos.x - distance) / chunkSize), 0);
+			int maxX = Mathf.Min(Mathf.FloorToInt((pos.x + distance) / chunkSize), parameter.NumberOfChunk.x);
+			int minY = Mathf.Max(Mathf.FloorToInt((pos.z - distance) / chunkSize), 0);
+			int maxY = Mathf.Min(Mathf.FloorToInt((pos.z + distance) / chunkSize), parameter.NumberOfChunk.y);
+
+			for (int y = minY; y <= maxY; ++y)
 			{
-				Vector3 dist = points[i0].Position - point.Position;
-				if (dist.sqrMagnitude < distance * distance)
+				for (int x = minX; x <= maxX; ++x)
 				{
-					canAdd = false;
+					var chunk = new Vector2Int(x, y);
+					if (pointMap.TryGetValue(chunk, out List<FieldPoint> pointsInChunk) != false)
+					{
+						for (int i0 = 0; i0 < pointsInChunk.Count; ++i0)
+						{
+							Vector3 dist = pointsInChunk[i0].Position - pos;
+							if (dist.sqrMagnitude < distance * distance)
+							{
+								canAdd = false;
+								break;
+							}
+						}
+
+						if (canAdd == false)
+						{
+							break;
+						}
+					}
+				}
+
+				if (canAdd == false)
+				{
 					break;
 				}
 			}
@@ -436,9 +470,33 @@ namespace FieldGenerator
 			if (canAdd != false)
 			{
 				points.Add(point);
+				AddToPointMap(point);
 			}
 
 			return canAdd;
+		}
+
+		void AddToPointMap(FieldPoint point)
+		{
+			Vector2Int chunk = GetChunk(point.Position);
+			List<FieldPoint> pointsInChunk;
+			if (pointMap.TryGetValue(chunk, out pointsInChunk) == false)
+			{
+				pointsInChunk = new List<FieldPoint>();
+				pointMap.Add(chunk, pointsInChunk);
+			}
+			pointsInChunk.Add(point);
+		}
+
+		Vector2Int GetChunk(Vector3 position)
+		{
+			var chunk = new Vector2Int();
+
+			float chunkSize = parameter.ChunkSize;
+			chunk.x = Mathf.FloorToInt(position.x / chunkSize);
+			chunk.y = Mathf.FloorToInt(position.z / chunkSize);
+
+			return chunk;
 		}
 
 		public List<FieldPoint> Points
@@ -466,6 +524,7 @@ namespace FieldGenerator
 		System.DateTime lastInterruptionTime;
 
 		List<FieldPoint> points = new List<FieldPoint>();
+		Dictionary<Vector2Int, List<FieldPoint>> pointMap = new Dictionary<Vector2Int, List<FieldPoint>>();
 		RoadParameter parameter;
 		River river;
 
