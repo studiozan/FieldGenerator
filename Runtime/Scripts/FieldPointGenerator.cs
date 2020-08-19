@@ -26,6 +26,7 @@ namespace FieldGenerator
 			connection.FieldConnectCreate(
 				fieldPoints,
 				parameter.roadWidth + parameter.roadSpacing,
+				new Vector3( parameter.chunkSize * parameter.numberOfChunk.x, 0f, parameter.chunkSize * parameter.numberOfChunk.y),
 				parameter.riverStepSize,
 				parameter.sugorokuMergeMulti,
 				parameter.sugorokuOffset);

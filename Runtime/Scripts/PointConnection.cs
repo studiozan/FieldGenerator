@@ -33,7 +33,7 @@ namespace FieldGenerator
 		 * @param sugorokuMergeMulti	すごろく用の接続座標を間引く範囲の倍率
 		 * @param sugorokuOfset	すごろく用の接続座標を外周から指定された距離分を間引く時の値
 		 */
-		public void FieldConnectCreate( List<FieldPoint> fieldList, float interval, float riverInterval = 10f, float sugorokuMergeMulti = 1.75f,
+		public void FieldConnectCreate( List<FieldPoint> fieldList, float interval, Vector3 fieldSize, float riverInterval = 10f, float sugorokuMergeMulti = 1.75f,
 			float sugorokuOfset = 1000f)
 		{
 			/* フィールドの座標情報のリストを設定 */
@@ -42,16 +42,16 @@ namespace FieldGenerator
 			SetFieldPoint();
 
 			/* 川を繋げる */
-			SetConnection( riverConnectPointList, riverInterval, true);
+			SetConnection( riverConnectPointList, riverInterval, fieldSize, true);
 			/* 道路を全て繋げる */
-			SetConnection( roadConnectPointList, interval);
+			SetConnection( roadConnectPointList, interval, fieldSize);
 			/* すごろくで使う道路を繋げる */
 			float power = sugorokuMergeMulti;
 			if( power < 1f)
 			{
 				power = 1f;
 			}
-			SetConnection( sugorokuConnectPointList, interval * ( power * 2f - 1f), false, interval * power, sugorokuOfset);
+			SetConnection( sugorokuConnectPointList, interval * ( power * 2f - 1f), fieldSize, false, interval * power, sugorokuOfset);
 		}
 
 		/**
@@ -128,13 +128,13 @@ namespace FieldGenerator
 		 * @param random		接続する確率
 		 * @param maxNum		接続する最大数。-1の場合は判定しない
 		 */
-		public void SetConnection( List<FieldConnectPoint> pointList, float interval, bool inOrder = false, float mergeSize = 0f,
+		public void SetConnection( List<FieldConnectPoint> pointList, float interval, Vector3 fieldSize, bool inOrder = false, float mergeSize = 0f,
 			float ofsetSize = 0f, float random = 1f, int maxNum = -1)
 		{
 			int i0, i1, i2, index, randomCount, count;
 			float itv, length, checkTheta = 0.707f, theta, rand;
 			bool flg, orderFlag;
-			Vector3 sub;
+			Vector3 sub = Vector3.zero, currentPosition;
 			FieldConnectPoint currentPoint;
 			var direction = new Vector3[ 4];
 			var min = new float[ 4];
@@ -142,21 +142,80 @@ namespace FieldGenerator
 			itv = interval * 1.5f;
 			itv = itv * itv;
 			randomCount = 0;
+			var splitList = new List<List<FieldConnectPoint>>();
+
+			int loopCount;
+			var splitFlag = false;
 
 			direction[ 0] = Vector3.forward;
 			direction[ 1] = Vector3.back;
 			direction[ 2] = Vector3.right;
 			direction[ 3] = Vector3.left;
 
-			if( mergeSize > 0f)
+			float halfSize;
+			if( fieldSize.x > fieldSize.z)
 			{
-				/* 頂点を間引く処理 */
-				FieldPointMerge( pointList, mergeSize);
+				halfSize = fieldSize.x * 0.33f;
 			}
+			else
+			{
+				halfSize = fieldSize.z * 0.33f;
+			}
+			
 			/* 外周から一定範囲の点を間引く処理 */
 			if( ofsetSize > 0f)
 			{
 				OuterPointThinning( pointList, ofsetSize);
+			}
+			/* 頂点を間引く処理 */
+			if( mergeSize > 0f)
+			{
+				FieldPointMerge( pointList, mergeSize);
+			}
+			for( i0 = 0; i0 < 9; ++i0)
+			{
+				var list = new List<FieldConnectPoint>();
+				splitList.Add( list);
+			}
+			int listIndex;
+			if( pointList.Count > 500)
+			{
+				splitFlag = true;
+			}
+			
+			/* 9分割の座標リストを作成 */
+			//  TODO: まだ無駄が多いので、36分割ぐらいした状態で求める座標に応じて周囲9マスのリストをまとめて1回のfor文で探査が終わるように変更したい
+			for( i0 = 0; i0 < pointList.Count; ++i0)
+			{
+				currentPosition = pointList[ i0].Position;
+				if( splitFlag != false)
+				{
+					if( currentPosition.x < halfSize)
+					{
+						listIndex = 0;
+					}
+					else if( currentPosition.x > halfSize * 2f)
+					{
+						listIndex = 2;
+					}
+					else
+					{
+						listIndex = 1;
+					}
+					if( currentPosition.z > halfSize * 2f)
+					{
+						listIndex += 6;
+					}
+					else if( currentPosition.z > halfSize)
+					{
+						listIndex += 3;
+					}
+				}
+				else
+				{
+					listIndex = 0;
+				}
+				splitList[ listIndex].Add( pointList[ i0]);
 			}
 			for( i0 = 0; i0 < pointList.Count; ++i0)
 			{
@@ -172,102 +231,267 @@ namespace FieldGenerator
 					/* ランダムに判定しない */
 					continue;
 				}
-				// TODO: 4方向だけに繋げるための初期化だが、すでに接続してる物がある場合を考慮していなかったので、繋げているものがある場合はその値で初期化するように変更したい
-				//			試してみた結果、繋がりそうで繋がっていない場所が多数発生したので、別の方法を考える。
 				min[ 0] = itv;	min[ 1] = itv;	min[ 2] = itv;	min[ 3] = itv;
 				no[ 0] = -1;	no[ 1] = -1;	no[ 2] = -1;	no[ 3] = -1;
 				orderFlag = false;
 				count = currentPoint.ConnectionList.Count;
-				for( i1 = 0; i1 < pointList.Count; ++i1)
+
+				if( currentPoint.Position.x < halfSize)
 				{
-					if( inOrder != false && count > 0)
+					listIndex = 0;
+				}
+				else if( currentPoint.Position.x > halfSize * 2f)
+				{
+					listIndex = 2;
+				}
+				else
+				{
+					listIndex = 1;
+				}
+				if( currentPoint.Position.z > halfSize * 2f)
+				{
+					listIndex += 6;
+				}
+				else if( currentPoint.Position.z > halfSize)
+				{
+					listIndex += 3;
+				}
+				if( splitFlag == false)
+				{
+					listIndex = 0;
+				}
+				loopCount = 0;
+
+				while( count < 4)
+				{
+				//min[ 0] = itv;	min[ 1] = itv;	min[ 2] = itv;	min[ 3] = itv;
+					no[ 0] = -1;	no[ 1] = -1;	no[ 2] = -1;	no[ 3] = -1;
+					for( i1 = 0; i1 < splitList[ listIndex].Count; ++i1)
 					{
-						/* 順番通りの場合は次の座標と判断する */
-						if( orderFlag == false)
+						if( inOrder != false && count > 0)
 						{
-							if( i0 < i1)
+							/* 順番通りの場合は次の座標と判断する */
+							if( orderFlag == false)
 							{
-								break;
+								if( i0 < i1)
+								{
+									break;
+								}
+								i1 = i0 + 1;
+								if( i1 >= splitList[ listIndex].Count)
+								{
+									break;
+								}
+								orderFlag = true;
 							}
-							i1 = i0 + 1;
-							if( i1 >= pointList.Count)
-							{
-								break;
-							}
-							orderFlag = true;
 						}
-					}
-					if( i0 == i1)
-					{
-						/* 同じものは判定しない */
-						continue;
-					}
-					if( currentPoint.Type == PointType.kRoadAlongRiver)
-					{
-						if( pointList[ i1].Type == PointType.kRoadAlongRiver)
+						if( i0 == i1)
 						{
-							/* 川沿いの道路は川と同じように前後の座標と結ぶようにする */
-							if( i1 != i0 + 1)
+							/* 同じものは判定しない */
+							continue;
+						}
+						if( currentPoint.Type == PointType.kRoadAlongRiver)
+						{
+							if( splitList[ listIndex][ i1].Type == PointType.kRoadAlongRiver)
 							{
+								/* 川沿いの道路は川と同じように前後の座標と結ぶようにする */
+								if( i1 != i0 + 1)
+								{
+									continue;
+								}
+							}
+							else
+							{
+								/* 川沿いから繋ぐ場合は、川沿いの道路とだけ接続する */
 								continue;
 							}
 						}
-						else
+						sub.x = splitList[ listIndex][ i1].Position.x - currentPoint.Position.x;
+						sub.z = splitList[ listIndex][ i1].Position.z - currentPoint.Position.z;
+						length = sub.x * sub.x + sub.z * sub.z;
+						if( length > itv)
 						{
-							/* 川沿いから繋ぐ場合は、川沿いの道路とだけ接続する */
+							/* 距離が離れているものは判定しない */
 							continue;
 						}
+						sub = sub.normalized;
+						flg = false;
+						for( i2 = 0; i2 < 4; ++i2)
+						{
+							theta = sub.x * direction[ i2].x + sub.z * direction[ i2].z;
+							if( theta <= checkTheta)
+							{
+								/* 角度の条件を満たしていない */
+								continue;
+							}
+							if( min[ i2] <= length)
+							{
+								/* すでに設定しているものより遠い */
+								continue;
+							}
+							min[ i2] = length;
+							no[ i2] = i1;
+							flg = true;
+						}
+						if( flg != false)
+						{
+							++count;
+						}
+						if( inOrder != false)
+						{
+							if( orderFlag != false)
+							{
+								i1 = splitList[ listIndex].Count;
+							}
+						}
 					}
-					sub = pointList[ i1].Position - currentPoint.Position;
-					length = sub.x * sub.x + sub.z * sub.z;
-					if( length > itv)
-					{
-						/* 距離が離れているものは判定しない */
-						continue;
-					}
-					sub = sub.normalized;
-					flg = false;
 					for( i2 = 0; i2 < direction.Length; ++i2)
 					{
-						theta = sub.x * direction[ i2].x + sub.z * direction[ i2].z;
-						if( theta <= checkTheta)
+						if( no[ i2] < 0)
 						{
-							/* 角度の条件を満たしていない */
+							/* この方向に繋げる座標が無かった */
 							continue;
 						}
-						if( min[ i2] <= length)
+						index = no[ i2];
+						currentPoint.SetConnection( splitList[ listIndex][ index]);
+						splitList[ listIndex][ index].SetConnection( currentPoint);
+					}
+					++randomCount;
+					/* 接続点が4つ未満の場合は、別の座標リストも参照するようにする */
+					if( count < 4)
+					{
+						if( splitFlag == false)
 						{
-							/* すでに設定しているものより遠い */
-							continue;
+							break;
 						}
-						min[ i2] = length;
-						no[ i2] = i1;
-						flg = true;
-					}
-					if( flg != false)
-					{
-						++count;
-					}
-					if( inOrder != false)
-					{
-						if( orderFlag != false)
+						++loopCount;
+						if( loopCount > 1)
 						{
-							i1 = pointList.Count;
+							break;
+						}
+						if( NextBlockCheck( currentPoint.Position, 150f, halfSize) == false)
+						{
+							break;
+						}
+						switch( listIndex)
+						{
+							case 0:
+							if( currentPoint.Position.x > halfSize - 500f)
+							{
+								listIndex = 1;
+							}
+							else
+							{
+								listIndex = 3;
+							}
+							break;
+							case 1:
+							if( currentPoint.Position.x > halfSize * 2f - 500f)
+							{
+								listIndex = 2;
+							}
+							else if( currentPoint.Position.x < halfSize + 500f)
+							{
+								listIndex = 0;
+							}
+							else
+							{
+								listIndex = 4;
+							}
+							break;
+							case 2:
+							if( currentPoint.Position.x < halfSize * 2f + 500f)
+							{
+								listIndex = 1;
+							}
+							else
+							{
+								listIndex = 5;
+							}
+							break;
+							case 3:
+							if( currentPoint.Position.z > halfSize * 2f - 500f)
+							{
+								listIndex = 6;
+							}
+							else if( currentPoint.Position.x < halfSize + 500f)
+							{
+								listIndex = 0;
+							}
+							else
+							{
+								listIndex = 4;
+							}
+							break;
+							case 4:
+							if( currentPoint.Position.x > halfSize * 2f - 500f)
+							{
+								listIndex = 5;
+							}
+							else if( currentPoint.Position.x < halfSize + 500f)
+							{
+								listIndex = 3;
+							}
+							else if( currentPoint.Position.z > halfSize * 2f - 500f)
+							{
+								listIndex = 7;
+							}
+							else
+							{
+								listIndex = 1;
+							}
+							break;
+							case 5:
+							if( currentPoint.Position.z > halfSize * 2f - 500f)
+							{
+								listIndex = 8;
+							}
+							else if( currentPoint.Position.x < halfSize + 500f)
+							{
+								listIndex = 2;
+							}
+							else
+							{
+								listIndex = 4;
+							}
+							break;
+							case 6:
+							if( currentPoint.Position.x > halfSize - 500f)
+							{
+								listIndex = 7;
+							}
+							else
+							{
+								listIndex = 3;
+							}
+							break;
+							case 7:
+							if( currentPoint.Position.x > halfSize * 2f - 500f)
+							{
+								listIndex = 8;
+							}
+							else if( currentPoint.Position.x < halfSize + 500f)
+							{
+								listIndex = 6;
+							}
+							else
+							{
+								listIndex = 4;
+							}
+							break;
+							case 8:
+							if( currentPoint.Position.x < halfSize * 2f + 500f)
+							{
+								listIndex = 1;
+							}
+							else
+							{
+								listIndex = 5;
+							}
+							break;
 						}
 					}
 				}
-				for( i2 = 0; i2 < direction.Length; ++i2)
-				{
-					if( no[ i2] < 0)
-					{
-						/* この方向に繋げる座標が無かった */
-						continue;
-					}
-					index = no[ i2];
-					currentPoint.SetConnection( pointList[ index]);
-					pointList[ index].SetConnection( currentPoint);
-				}
-				++randomCount;
 			}
 			/* 孤立している点は削除する */
 			for( i0 = pointList.Count - 1; i0 >= 0; --i0)
@@ -277,6 +501,34 @@ namespace FieldGenerator
 					pointList.RemoveAt( i0);
 				}
 			}
+		}
+
+		bool NextBlockCheck( Vector3 pos, float ofsetSize, float halfSize)
+		{
+			float sub;
+
+			sub = pos.x - halfSize;
+			if( sub > -ofsetSize && sub < ofsetSize)
+			{
+				return true;
+			}
+			sub = pos.x - halfSize * 2f;
+			if( sub > -ofsetSize && sub < ofsetSize)
+			{
+				return true;
+			}
+			sub = pos.z - halfSize;
+			if( sub > -ofsetSize && sub < ofsetSize)
+			{
+				return true;
+			}
+			sub = pos.z - halfSize * 2f;
+			if( sub > -ofsetSize && sub < ofsetSize)
+			{
+				return true;
+			}
+
+			return false;
 		}
 
 		/**
@@ -327,6 +579,7 @@ namespace FieldGenerator
 			max = new Vector3( float.MinValue, 0f, float.MinValue);
 			for( i0 = 0; i0 < pointList.Count; ++i0)
 			{
+				/* 点の情報に極端な値が入っている事があるので、それを取り除く処理 */
 				if( Mathf.Abs( pointList[ i0].Position.x) >= maxSize || Mathf.Abs( pointList[ i0].Position.z) >= maxSize)
 				{
 					continue;
