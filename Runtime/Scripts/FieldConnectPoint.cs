@@ -18,6 +18,7 @@ namespace FieldGenerator
 			Position = pos;
 			Type = type;
 			ConnectionList = new List<FieldConnectPoint>();
+			WidthList = new List<float>();
 		}
 
 		/**
@@ -75,6 +76,12 @@ namespace FieldGenerator
 
 		//! リストのインデックス
 		public int Index
+		{
+			get;
+			set;
+		}
+
+		public List<float> WidthList
 		{
 			get;
 			set;
