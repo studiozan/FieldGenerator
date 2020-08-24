@@ -20,8 +20,8 @@ namespace FieldGenerator
 		{
 			fieldPoints.Clear();
 
-			yield return GenerateRiver();
-			yield return GenerateRoad();
+			yield return CoroutineUtility.CoroutineCycle( GenerateRiver());
+			yield return CoroutineUtility.CoroutineCycle( GenerateRoad());
 
 			connection.FieldConnectCreate(
 				fieldPoints,
@@ -31,9 +31,11 @@ namespace FieldGenerator
 				parameter.sugorokuMergeMulti,
 				parameter.sugorokuOffset);
 
-			yield return DetectSurroundedArea();
+			yield return CoroutineUtility.CoroutineCycle( DetectSurroundedArea());
 
 			OnGenerate?.Invoke(this);
+			
+			combination.Clear();
 		}
 
 		IEnumerator GenerateRiver()
@@ -54,7 +56,7 @@ namespace FieldGenerator
 				BendabilityAttenuation = parameter.bendabilityAttenuation,
 			};
 
-			yield return river.Generate(param, random);
+			yield return CoroutineUtility.CoroutineCycle( river.Generate(param, random));
 			fieldPoints.AddRange(river.Points);
 		}
 
@@ -69,7 +71,7 @@ namespace FieldGenerator
 				Spacing = parameter.roadSpacing,
 			};
 
-			yield return road.Generate(param, river, random);
+			yield return CoroutineUtility.CoroutineCycle( road.Generate(param, river, random));
 			fieldPoints.AddRange(road.Points);
 		}
 
@@ -88,6 +90,7 @@ namespace FieldGenerator
 			{
 				FieldConnectPoint point = roadConnectPoints[i0];
 				List<FieldConnectPoint> connectPoints = point.ConnectionList;
+				
 				for (int i1 = 0; i1 < connectPoints.Count; ++i1)
 				{
 					var areaPoints = new List<FieldConnectPoint>();

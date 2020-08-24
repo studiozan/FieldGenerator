@@ -18,9 +18,9 @@ namespace FieldGenerator
 			points.Clear();
 			pointMap.Clear();
 
-			yield return GenerateDistrictRoad();
-			yield return GenerateRoadAlongRiver(river.RootPoint);
-			yield return GenerateGridRoad();
+			yield return CoroutineUtility.CoroutineCycle( GenerateDistrictRoad());
+			yield return CoroutineUtility.CoroutineCycle( GenerateRoadAlongRiver(river.RootPoint));
+			yield return CoroutineUtility.CoroutineCycle( GenerateGridRoad());
 		}
 
 		IEnumerator GenerateDistrictRoad()
@@ -65,7 +65,7 @@ namespace FieldGenerator
 			rightRoadPoints.Clear();
 			for (int i0 = 0; i0 < riverRoot.NextPoints.Count; ++i0)
 			{
-				yield return GenerateRoadAlongRiverRecursive(riverRoot, riverRoot.NextPoints[i0]);
+				yield return CoroutineUtility.CoroutineCycle( GenerateRoadAlongRiverRecursive(riverRoot, riverRoot.NextPoints[i0]));
 			}
 
 			roadAlongRiverPoints.AddRange(leftRoadPoints);
@@ -115,7 +115,7 @@ namespace FieldGenerator
 			{
 				for (int i0 = 0; i0 < nextPoint.NextPoints.Count; ++i0)
 				{
-					yield return GenerateRoadAlongRiverRecursive(nextPoint, nextPoint.NextPoints[i0]);
+					yield return CoroutineUtility.CoroutineCycle( GenerateRoadAlongRiverRecursive(nextPoint, nextPoint.NextPoints[i0]));
 				}
 			}
 			else

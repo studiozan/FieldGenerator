@@ -39,7 +39,7 @@ namespace FieldGenerator
 			minAngleForBranching = Mathf.Atan2(width * 0.5f, parameter.StepSize) * Mathf.Rad2Deg * 2;
 			canBranch = parameter.AngleRange >= minAngleForBranching;
 
-			yield return GenerateRiverRecursive(rootPoint, initialDir, 1);
+			yield return CoroutineUtility.CoroutineCycle( GenerateRiverRecursive(rootPoint, initialDir, 1));
 		}
 
 		IEnumerator GenerateRiverRecursive(RiverPoint riverPoint, Vector3 dir, float bendability)
@@ -88,7 +88,7 @@ namespace FieldGenerator
 						numStepWithoutBranching = CalcNumStepWithoutBranching();
 						float angle2 = angle + Mathf.Lerp(minAngleForBranching, angleRange, (float)random.NextDouble()) * (random.Next(2) == 0 ? -1 : 1);
 						Vector3 nextDir2 = Quaternion.Euler(0, angle2, 0) * step;
-						yield return GenerateRiverRecursive(currentPoint, nextDir2, bend);
+						yield return CoroutineUtility.CoroutineCycle( GenerateRiverRecursive(currentPoint, nextDir2, bend));
 					}
 				}
 
