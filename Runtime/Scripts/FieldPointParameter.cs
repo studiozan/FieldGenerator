@@ -46,9 +46,9 @@ namespace FieldGenerator
 		//川の曲がりやすさの減衰量
 		[SerializeField]
 		public float bendabilityAttenuation = 0.01f;
-		//道路の幅
+		//道路の幅の候補
 		[SerializeField]
-		public float roadWidth = 4;
+		public WeightedValue[] roadWidthCandidates = { new WeightedValue { value = 4, weight = 1 } };
 		//川から川沿いの道路までの距離
 		[SerializeField]
 		public float distanceFromRiver = 2;

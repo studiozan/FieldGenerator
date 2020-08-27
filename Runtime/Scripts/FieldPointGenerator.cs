@@ -13,6 +13,17 @@ namespace FieldGenerator
 
 			random = new System.Random(parameter.seed);
 
+			maxRoadWidth = 0;
+			WeightedValue[] widthCandidaates = parameter.roadWidthCandidates;
+			for (int i0 = 0; i0 < widthCandidaates.Length; ++i0)
+			{
+				float width = widthCandidaates[i0].value;
+				if (width > maxRoadWidth)
+				{
+					maxRoadWidth = width;
+				}
+			}
+
 			connection.Initialize();
 		}
 
@@ -25,7 +36,7 @@ namespace FieldGenerator
 
 			connection.FieldConnectCreate(
 				fieldPoints,
-				parameter.roadWidth + parameter.roadSpacing,
+				maxRoadWidth + parameter.roadSpacing,
 				new Vector3( parameter.chunkSize * parameter.numberOfChunk.x, 0f, parameter.chunkSize * parameter.numberOfChunk.y),
 				parameter.riverStepSize,
 				parameter.sugorokuMergeMulti,
@@ -66,7 +77,7 @@ namespace FieldGenerator
 			{
 				NumberOfChunk = parameter.numberOfChunk,
 				ChunkSize = parameter.chunkSize,
-				Width = parameter.roadWidth,
+				Width = maxRoadWidth,
 				DistanceFromRiver = parameter.distanceFromRiver,
 				Spacing = parameter.roadSpacing,
 			};
@@ -268,7 +279,7 @@ namespace FieldGenerator
 
 		public float RoadWidth
 		{
-			get => parameter.roadWidth;
+			get => maxRoadWidth;
 		}
 
 		public List<SurroundedArea> SurroundedAreas
@@ -285,23 +296,17 @@ namespace FieldGenerator
 
 
 		System.Random random;
-
 		System.DateTime lastInterruptionTime;
-
 		FieldPointParameter parameter;
 
 		River river = new River();
-
-
 		Road road = new Road();
 
-
 		List<FieldPoint> fieldPoints = new List<FieldPoint>();
-
 		PointConnection connection = new PointConnection();
-
 		List<SurroundedArea> areas = new List<SurroundedArea>();
-
 		Dictionary<int, HashSet<int>> combination = new Dictionary<int, HashSet<int>>();
+
+		float maxRoadWidth;
 	}
 }
