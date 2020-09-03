@@ -27,6 +27,11 @@ namespace FieldGenerator
 				Vector3 center = CalcCenter(points);
 				GameObject prefab = DetectWeightedPrefab(parameter.weightedPrefabs);
 
+				if (prefab == null)
+				{
+					Debug.LogError($"抽選されたプレハブがnullです。");
+				}
+
 				GameObject obj = Object.Instantiate(prefab);
 				obj.transform.SetParent(parent);
 				string prefabName = prefab.name;
