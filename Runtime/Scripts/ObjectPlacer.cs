@@ -4,69 +4,92 @@ using UnityEngine;
 
 namespace FieldGenerator
 {
+	[System.Serializable]
 	public class ObjectPlacer
 	{
-		public ObjectPlacer()
+		public void Initialize(int seed = 0)
 		{
-			gameObject = new GameObject();
+			random = new System.Random(seed);
 		}
 
-		public ObjectPlacer(string name) : this()
+		public List<GameObject> PlaceObjects(PlacementParameter parameter, List<SurroundedArea> areas, Transform parent = null)
 		{
-			SetName(name);
+			var objects = new List<GameObject>();
+
+			var copyAreas = new List<SurroundedArea>(areas);
+			int count = copyAreas.Count;
+			int max = Mathf.RoundToInt((float)count * parameter.placementRate);
+			var objectCountMap = new Dictionary<string, int>();
+			for (int i0 = 0; i0 < max; ++i0)
+			{
+				int randomIndex = random.Next(count);
+				List<Vector3> points = copyAreas[randomIndex].AreaPoints;
+				Vector3 center = CalcCenter(points);
+				GameObject prefab = DetectWeightedPrefab(parameter.weightedPrefabs);
+
+				GameObject obj = Object.Instantiate(prefab);
+				obj.transform.SetParent(parent);
+				string prefabName = prefab.name;
+				if (objectCountMap.ContainsKey(prefabName) == false)
+				{
+					objectCountMap.Add(prefabName, 0);
+				}
+				obj.name = $"{prefabName}{objectCountMap[prefabName]}";
+				++objectCountMap[prefabName];
+				obj.transform.position = center;
+				objects.Add(obj);
+
+				--count;
+				copyAreas[randomIndex] = copyAreas[count];
+				copyAreas.RemoveAt(count);
+			}
+
+			return objects;
 		}
 
-		public ObjectPlacer(string name, Transform parent) : this(name)
+		Vector3 CalcCenter(List<Vector3> points)
 		{
-			SetParent(parent);
-		}
+			var center = new Vector3();
 
-		public void SetName(string name)
-		{
-			gameObject.name = name;
-		}
-
-		public void SetParent(Transform parent)
-		{
-			gameObject.transform.SetParent(parent);
-		}
-
-		public void PlaceObjects<T>(GameObject prefab, List<T> points) where T : FieldPoint
-		{
 			for (int i0 = 0; i0 < points.Count; ++i0)
 			{
-				if (i0 < objects.Count)
-				{
-					objects[i0].transform.position = points[i0].Position;
-				}
-				else
-				{
-					GameObject obj = Object.Instantiate(prefab, points[i0].Position, Quaternion.identity, gameObject.transform);
-					obj.name = $"Point_{i0}";
-					objects.Add(obj);
-				}
+				center += points[i0];
 			}
+			center /= points.Count;
 
-			if (objects.Count > points.Count)
-			{
-				for (int i0 = objects.Count - 1; i0 >= points.Count; --i0)
-				{
-					Object.Destroy(objects[i0]);
-					objects.RemoveAt(i0);
-				}
-			}
+			return center;
 		}
 
-		public void Clear()
+		GameObject DetectWeightedPrefab(WeightedObject[] weightedPrefabs)
 		{
-			for (int i0 = 0; i0 < objects.Count; ++i0)
+			GameObject prefab = null;
+
+			float totalWeight = 0;
+			for (int i0 = 0; i0 < weightedPrefabs.Length; ++i0)
 			{
-				Object.Destroy(objects[i0]);
+				totalWeight += weightedPrefabs[i0].weight;
 			}
-			objects.Clear();
+
+			float border = totalWeight * (float)random.NextDouble();
+
+			for (int i0 = 0; i0 < weightedPrefabs.Length; ++i0)
+			{
+				float weight = weightedPrefabs[i0].weight;
+				if (Mathf.Approximately(weight, 0) == false)
+				{
+					if (border <= weight)
+					{
+						prefab = weightedPrefabs[i0].gameObject;
+						break;
+					}
+
+					border -= weight;
+				}
+			}
+
+			return prefab;
 		}
 
-		GameObject gameObject;
-		List<GameObject> objects = new List<GameObject>();
+		System.Random random;
 	}
 }
