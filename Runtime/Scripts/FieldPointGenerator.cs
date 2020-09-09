@@ -105,9 +105,10 @@ namespace FieldGenerator
 				for (int i1 = 0; i1 < connectPoints.Count; ++i1)
 				{
 					var areaPoints = new List<FieldConnectPoint>();
-					if (TryDetectSurroundedAreaRecursive(connectPoints[i1], areaPoints, point.Index, point.Index, 3) != false)
+					areaPoints.Add(point);
+					FieldConnectPoint connectPoint = connectPoints[i1];
+					if (TryDetectSurroundedAreaRecursive(connectPoint, areaPoints, point.Index, point.Index, 4) != false)
 					{
-						areaPoints.Add(point);
 						if (IsExistCombination(areaPoints) == false)
 						{
 							AddCombination(areaPoints);
@@ -133,31 +134,93 @@ namespace FieldGenerator
 
 		bool TryDetectSurroundedAreaRecursive(FieldConnectPoint point, List<FieldConnectPoint> areaPoints, int targetIndex, int prevIndex, int count)
 		{
+			bool wasDetected = false;
+
+			--count;
 			if (count > 0)
 			{
+				areaPoints.Add(point);
 				List<FieldConnectPoint> connectPoints = point.ConnectionList;
-				for (int i0 = 0; i0 < connectPoints.Count; ++i0)
+				int baseIndex = connectPoints.FindIndex(p => p.Index == prevIndex);
+				List<int> clockwiseIndices = GetClockwiseIndices(point, connectPoints, baseIndex);
+				if (clockwiseIndices.Count >= 2)
 				{
-					FieldConnectPoint connectPoint = connectPoints[i0];
-					int connectIndex = connectPoint.Index;
-					if (connectIndex != prevIndex)
+					FieldConnectPoint nextPoint = connectPoints[clockwiseIndices[clockwiseIndices.Count - 1]];
+					if (nextPoint.Index == targetIndex)
 					{
-						if (connectIndex == targetIndex)
-						{
-							areaPoints.Add(point);
-							return true;
-						}
+						wasDetected = true;
+					}
+					else
+					{
+						wasDetected = TryDetectSurroundedAreaRecursive(nextPoint, areaPoints, targetIndex, point.Index, count);
+					}
+				}
+			}
 
-						if (TryDetectSurroundedAreaRecursive(connectPoint, areaPoints, targetIndex, point.Index, count - 1) != false)
+			return wasDetected;
+		}
+
+		List<int> GetClockwiseIndices(FieldConnectPoint origin, List<FieldConnectPoint> points, int baseIndex)
+		{
+			var clockwise = new List<int>();
+
+			var rightUp = new List<KeyValuePair<int, float>>();
+			var rightDown = new List<KeyValuePair<int, float>>();
+			var leftDown = new List<KeyValuePair<int, float>>();
+			var leftUp = new List<KeyValuePair<int, float>>();
+
+			Vector3 baseVec = points[baseIndex].Position - origin.Position;
+			baseVec.Normalize();
+			var right = new Vector3(baseVec.z, 0, -baseVec.x);
+			var left = new Vector3(-baseVec.z, 0, baseVec.x);
+			for (int i0 = 0; i0 < points.Count; ++i0)
+			{
+				if (i0 != baseIndex)
+				{
+					Vector3 v = points[i0].Position - origin.Position;
+					v.Normalize();
+					float cross1 = Vector3.Cross(baseVec, v).y;
+					//右
+					if (cross1 >= 0)
+					{
+						float cross2 = Vector3.Cross(right, v).y;
+						if (cross2 <= 0)
 						{
-							areaPoints.Add(point);
-							return true;
+							rightUp.Add(new KeyValuePair<int, float>(i0, cross2));
+						}
+						else
+						{
+							rightDown.Add(new KeyValuePair<int, float>(i0, cross2));
+						}
+					}
+					//左
+					else
+					{
+						float cross2 = Vector3.Cross(left, v).y;
+						if (cross2 <= 0)
+						{
+							leftDown.Add(new KeyValuePair<int, float>(i0, cross2));
+						}
+						else
+						{
+							leftUp.Add(new KeyValuePair<int, float>(i0, cross2));
 						}
 					}
 				}
 			}
 
-			return false;
+			rightUp.Sort((a, b) => a.Value.CompareTo(b.Value));
+			rightDown.Sort((a, b) => a.Value.CompareTo(b.Value));
+			leftDown.Sort((a, b) => a.Value.CompareTo(b.Value));
+			leftUp.Sort((a, b) => a.Value.CompareTo(b.Value));
+
+			clockwise.Add(baseIndex);
+			clockwise.AddRange(rightUp.ConvertAll<int>(pair => pair.Key));
+			clockwise.AddRange(rightDown.ConvertAll<int>(pair => pair.Key));
+			clockwise.AddRange(leftDown.ConvertAll<int>(pair => pair.Key));
+			clockwise.AddRange(leftUp.ConvertAll<int>(pair => pair.Key));
+
+			return clockwise;
 		}
 
 		Vector3 CalcCenter(List<FieldConnectPoint> points)
