@@ -12,9 +12,13 @@ namespace FieldGenerator
 		[SerializeField]
 		public bool rotatable = true;
 		[SerializeField]
-		public float heightScale = 1;
+		public float minHeightScale = 1;
 		[SerializeField]
-		public float horizontalScale = 1;
+		public float maxHeightScale = 1;
+		[SerializeField]
+		public float minHorizontalScale = 1;
+		[SerializeField]
+		public float maxHorizontalScale = 1;
 		[SerializeField]
 		public float weight = default;
 	}

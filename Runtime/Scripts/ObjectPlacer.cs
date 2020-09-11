@@ -46,7 +46,9 @@ namespace FieldGenerator
 					obj.name = $"{prefabName}{objectCountMap[prefabName]}";
 					++objectCountMap[prefabName];
 					Vector3 prefabScale = prefab.transform.localScale;
-					transform.localScale = new Vector3(prefabScale.x * wo.horizontalScale, prefabScale.y * wo.heightScale, prefabScale.z * wo.horizontalScale);
+					float heightScale = Mathf.Lerp(wo.minHeightScale, wo.maxHeightScale, (float)random.NextDouble());
+					float horizontalScale = Mathf.Lerp(wo.minHorizontalScale, wo.maxHorizontalScale, (float)random.NextDouble());
+					transform.localScale = new Vector3(prefabScale.x * horizontalScale, prefabScale.y * heightScale, prefabScale.z * horizontalScale);
 					if (wo.rotatable != false)
 					{
 						float angle = 360.0f * (float)random.NextDouble();
