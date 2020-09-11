@@ -25,24 +25,36 @@ namespace FieldGenerator
 				int randomIndex = random.Next(count);
 				List<Vector3> points = copyAreas[randomIndex].AreaPoints;
 				Vector3 center = CalcCenter(points);
-				GameObject prefab = DetectWeightedPrefab(parameter.weightedPrefabs);
-
-				if (prefab == null)
+				WeightedObject wo = DetectWeightedRandom(parameter.weightedPrefabs);
+				if (wo != null)
 				{
-					Debug.LogError($"抽選されたプレハブがnullです。");
-				}
+					GameObject prefab = wo.gameObject;
 
-				GameObject obj = Object.Instantiate(prefab);
-				obj.transform.SetParent(parent);
-				string prefabName = prefab.name;
-				if (objectCountMap.ContainsKey(prefabName) == false)
-				{
-					objectCountMap.Add(prefabName, 0);
+					if (prefab == null)
+					{
+						Debug.LogError($"抽選されたプレハブがnullです。");
+					}
+
+					GameObject obj = Object.Instantiate(prefab);
+					Transform transform = obj.transform;
+					transform.SetParent(parent);
+					string prefabName = prefab.name;
+					if (objectCountMap.ContainsKey(prefabName) == false)
+					{
+						objectCountMap.Add(prefabName, 0);
+					}
+					obj.name = $"{prefabName}{objectCountMap[prefabName]}";
+					++objectCountMap[prefabName];
+					Vector3 prefabScale = prefab.transform.localScale;
+					transform.localScale = new Vector3(prefabScale.x * wo.horizontalScale, prefabScale.y * wo.heightScale, prefabScale.z * wo.horizontalScale);
+					if (wo.rotatable != false)
+					{
+						float angle = 360.0f * (float)random.NextDouble();
+						transform.Rotate(0, angle, 0);
+					}
+					transform.position = center;
+					objects.Add(obj);
 				}
-				obj.name = $"{prefabName}{objectCountMap[prefabName]}";
-				++objectCountMap[prefabName];
-				obj.transform.position = center;
-				objects.Add(obj);
 
 				--count;
 				copyAreas[randomIndex] = copyAreas[count];
@@ -65,9 +77,9 @@ namespace FieldGenerator
 			return center;
 		}
 
-		GameObject DetectWeightedPrefab(WeightedObject[] weightedPrefabs)
+		WeightedObject DetectWeightedRandom(WeightedObject[] weightedPrefabs)
 		{
-			GameObject prefab = null;
+			WeightedObject ret = null;
 
 			float totalWeight = 0;
 			for (int i0 = 0; i0 < weightedPrefabs.Length; ++i0)
@@ -84,7 +96,7 @@ namespace FieldGenerator
 				{
 					if (border <= weight)
 					{
-						prefab = weightedPrefabs[i0].gameObject;
+						ret = weightedPrefabs[i0];
 						break;
 					}
 
@@ -92,7 +104,7 @@ namespace FieldGenerator
 				}
 			}
 
-			return prefab;
+			return ret;
 		}
 
 		System.Random random;

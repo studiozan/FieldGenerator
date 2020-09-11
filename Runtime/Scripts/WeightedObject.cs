@@ -10,6 +10,12 @@ namespace FieldGenerator
 		[SerializeField]
 		public GameObject gameObject = default;
 		[SerializeField]
+		public bool rotatable = true;
+		[SerializeField]
+		public float heightScale = 1;
+		[SerializeField]
+		public float horizontalScale = 1;
+		[SerializeField]
 		public float weight = default;
 	}
 }
