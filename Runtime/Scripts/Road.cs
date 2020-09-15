@@ -65,7 +65,7 @@ namespace FieldGenerator
 			rightRoadPoints.Clear();
 			for (int i0 = 0; i0 < riverRoot.NextPoints.Count; ++i0)
 			{
-				yield return CoroutineUtility.CoroutineCycle( GenerateRoadAlongRiverRecursive(riverRoot, riverRoot.NextPoints[i0]));
+				yield return CoroutineUtility.CoroutineCycle( GenerateRoadAlongRiverRecursive(riverRoot, riverRoot.NextPoints[i0], false, false));
 			}
 
 			roadAlongRiverPoints.AddRange(leftRoadPoints);
@@ -74,35 +74,57 @@ namespace FieldGenerator
 			points.AddRange(roadAlongRiverPoints);
 		}
 
-		IEnumerator GenerateRoadAlongRiverRecursive(RiverPoint currentPoint, RiverPoint nextPoint)
+		IEnumerator GenerateRoadAlongRiverRecursive(RiverPoint currentPoint, RiverPoint nextPoint, bool addedLeftPoint, bool addedRightPoint)
 		{
-			Vector3 dir = nextPoint.Position - currentPoint.Position;
+			Vector3 pos = currentPoint.Position;
+			Vector3 nextPos = nextPoint.Position;
+
+			Vector3 dir = nextPos - pos;
+			RiverPoint prevPoint = currentPoint.PrevPoint;
+			Vector3 prevDir = prevPoint != null ? pos - prevPoint.Position : dir;
+
 			float angle = Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg;
 			Quaternion rotation = Quaternion.Euler(0, angle, 0);
-			float dist = currentPoint.Width / 2 + parameter.DistanceFromRiver + parameter.Width / 2;
+
+			float dist = currentPoint.Width * 0.5f + parameter.DistanceFromRiver + parameter.Width * 0.5f;
 			var leftBase = new Vector3(-dist, 0, 0);
 			var rightBase = new Vector3(dist, 0, 0);
-			Vector3 left = rotation * leftBase + currentPoint.Position;
-			if (river.Covers(left) == false)
+
+			float cross = Vector3.Cross(prevDir, dir).y;
+
+			bool addedL = false;
+			bool addedR = false;
+
+			if (addedLeftPoint == false || cross > 0)
 			{
-				var leftPoint = new FieldPoint
+				Vector3 left = rotation * leftBase + pos;
+				if (river.Covers(left) == false)
 				{
-					Position = left,
-					Type = PointType.kRoadAlongRiver,
-				};
-				leftRoadPoints.Add(leftPoint);
-				AddToPointMap(leftPoint);
+					var leftPoint = new FieldPoint
+					{
+						Position = left,
+						Type = PointType.kRoadAlongRiver,
+					};
+					leftRoadPoints.Add(leftPoint);
+					AddToPointMap(leftPoint);
+					addedL = true;
+				}
 			}
-			Vector3 right = rotation * rightBase + currentPoint.Position;
-			if (river.Covers(right) == false)
+
+			if (addedRightPoint == false || cross < 0)
 			{
-				var rightPoint = new FieldPoint
+				Vector3 right = rotation * rightBase + pos;
+				if (river.Covers(right) == false)
 				{
-					Position = right,
-					Type = PointType.kRoadAlongRiver,
-				};
-				rightRoadPoints.Add(rightPoint);
-				AddToPointMap(rightPoint);
+					var rightPoint = new FieldPoint
+					{
+						Position = right,
+						Type = PointType.kRoadAlongRiver,
+					};
+					rightRoadPoints.Add(rightPoint);
+					AddToPointMap(rightPoint);
+					addedR = true;
+				}
 			}
 
 			if (System.DateTime.Now.Subtract(lastInterruptionTime).TotalMilliseconds >= FieldPointGenerator.kElapsedTimeToInterrupt)
@@ -115,12 +137,12 @@ namespace FieldGenerator
 			{
 				for (int i0 = 0; i0 < nextPoint.NextPoints.Count; ++i0)
 				{
-					yield return CoroutineUtility.CoroutineCycle( GenerateRoadAlongRiverRecursive(nextPoint, nextPoint.NextPoints[i0]));
+					yield return CoroutineUtility.CoroutineCycle( GenerateRoadAlongRiverRecursive(nextPoint, nextPoint.NextPoints[i0], addedL, addedR));
 				}
 			}
 			else
 			{
-				Vector3 nextLeft = rotation * leftBase + nextPoint.Position;
+				Vector3 nextLeft = rotation * leftBase + nextPos;
 				if (river.Covers(nextLeft) == false)
 				{
 					var leftPoint2 = new FieldPoint
@@ -131,7 +153,8 @@ namespace FieldGenerator
 					leftRoadPoints.Add(leftPoint2);
 					AddToPointMap(leftPoint2);
 				}
-				Vector3 nextRight = rotation * rightBase + nextPoint.Position;
+
+				Vector3 nextRight = rotation * rightBase + nextPos;
 				if (river.Covers(nextRight) == false)
 				{
 					var rightPoint2 = new FieldPoint
