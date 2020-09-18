@@ -17,6 +17,7 @@ namespace FieldGenerator
 			numStepWithoutBranching = CalcNumStepWithoutBranching();
 
 			points.Clear();
+			connectedPoints.Clear();
 			vertices.Clear();
 			pointMap.Clear();
 
@@ -30,18 +31,14 @@ namespace FieldGenerator
 
 			Vector3 initialDir = Quaternion.Euler(0, initialAngle, 0) * step;
 
-			var point = new FieldPoint
-			{
-				Position = rootPoint.Position,
-				Type = PointType.kRiver,
-			};
-			points.Add(point);
+			points.Add(ToFieldPoint(rootPoint));
 			AddToPointMap(rootPoint);
 
 			minAngleForBranching = Mathf.Atan2(width * 0.5f, parameter.StepSize) * Mathf.Rad2Deg * 2;
 			canBranch = parameter.AngleRange >= minAngleForBranching;
 
 			yield return CoroutineUtility.CoroutineCycle( GenerateRiverRecursive(rootPoint, initialDir, 1));
+			ConnectPoints();
 		}
 
 		IEnumerator GenerateRiverRecursive(RiverPoint riverPoint, Vector3 dir, float bendability)
@@ -515,6 +512,13 @@ namespace FieldGenerator
 			return new FieldPoint { Position = riverPoint.Position, Type = PointType.kRiver };
 		}
 
+		FieldConnectPoint ToFieldConnectPoint(RiverPoint riverPoint)
+		{
+			var point = new FieldConnectPoint();
+			point.Initialize(riverPoint.Position, PointType.kRiver);
+			return point;
+		}
+
 		float CalcBranchingProbability()
 		{
 			return Mathf.Lerp(parameter.MinInitialBranchingProbability, parameter.MaxInitialBranchingProbability, (float)random.NextDouble());
@@ -525,9 +529,51 @@ namespace FieldGenerator
 			return random.Next(parameter.MinNumStepWithoutBranching, parameter.MaxNumStepWithoutBranching + 1);
 		}
 
+		void ConnectPoints()
+		{
+			var connectPointMap = new Dictionary<RiverPoint, FieldConnectPoint>();
+			FieldConnectPoint point = ToFieldConnectPoint(rootPoint);
+			connectedPoints.Add(point);
+			connectPointMap.Add(rootPoint, point);
+			List<RiverPoint> nextPoints = rootPoint.NextPoints;
+			for (int i0 = 0; i0 < nextPoints.Count; ++i0)
+			{
+				ConnectPointsRecursive(point, nextPoints[i0], connectPointMap);
+			}
+		}
+
+		void ConnectPointsRecursive(FieldConnectPoint prevPoint, RiverPoint currentPoint, Dictionary<RiverPoint, FieldConnectPoint> connectPointMap)
+		{
+			if (connectPointMap.TryGetValue(currentPoint, out FieldConnectPoint point) == false)
+			{
+				point = ToFieldConnectPoint(currentPoint);
+				connectedPoints.Add(point);
+				connectPointMap.Add(currentPoint, point);
+
+				prevPoint.SetConnection(point);
+				point.SetConnection(prevPoint);
+
+				List<RiverPoint> nextPoints = currentPoint.NextPoints;
+				for (int i0 = 0; i0 < nextPoints.Count; ++i0)
+				{
+					ConnectPointsRecursive(point, nextPoints[i0], connectPointMap);
+				}
+			}
+			else
+			{
+				prevPoint.SetConnection(point);
+				point.SetConnection(prevPoint);
+			}
+		}
+
 		public List<FieldPoint> Points
 		{
 			get => points;
+		}
+
+		public List<FieldConnectPoint> ConnectedPoints
+		{
+			get => connectedPoints;
 		}
 
 		public RiverPoint RootPoint
@@ -545,6 +591,7 @@ namespace FieldGenerator
 		System.DateTime lastInterruptionTime;
 
 		List<FieldPoint> points = new List<FieldPoint>();
+		List<FieldConnectPoint> connectedPoints = new List<FieldConnectPoint>();
 		RiverPoint rootPoint;
 		RiverParameter parameter;
 		List<Vector3> vertices = new List<Vector3>();
