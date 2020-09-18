@@ -8,7 +8,7 @@ namespace FieldGenerator
 	{
 		public Vector3 Position { get; set; }
 		public float Width { get; set; }
-		public RiverPoint PrevPoint { get; set; }
+		public List<RiverPoint> PrevPoints { get; set; } = new List<RiverPoint>();
 		public List<RiverPoint> NextPoints { get; set; } = new List<RiverPoint>();
 	}
 }

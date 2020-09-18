@@ -65,7 +65,7 @@ namespace FieldGenerator
 			rightRoadPoints.Clear();
 			for (int i0 = 0; i0 < riverRoot.NextPoints.Count; ++i0)
 			{
-				yield return CoroutineUtility.CoroutineCycle( GenerateRoadAlongRiverRecursive(riverRoot, riverRoot.NextPoints[i0], false, false));
+				yield return CoroutineUtility.CoroutineCycle( GenerateRoadAlongRiverRecursive(riverRoot, null, riverRoot.NextPoints[i0], false, false));
 			}
 
 			roadAlongRiverPoints.AddRange(leftRoadPoints);
@@ -74,13 +74,12 @@ namespace FieldGenerator
 			points.AddRange(roadAlongRiverPoints);
 		}
 
-		IEnumerator GenerateRoadAlongRiverRecursive(RiverPoint currentPoint, RiverPoint nextPoint, bool addedLeftPoint, bool addedRightPoint)
+		IEnumerator GenerateRoadAlongRiverRecursive(RiverPoint currentPoint, RiverPoint prevPoint, RiverPoint nextPoint, bool addedLeftPoint, bool addedRightPoint)
 		{
 			Vector3 pos = currentPoint.Position;
 			Vector3 nextPos = nextPoint.Position;
 
 			Vector3 dir = nextPos - pos;
-			RiverPoint prevPoint = currentPoint.PrevPoint;
 			Vector3 prevDir = prevPoint != null ? pos - prevPoint.Position : dir;
 
 			float angle = Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg;
@@ -137,7 +136,7 @@ namespace FieldGenerator
 			{
 				for (int i0 = 0; i0 < nextPoint.NextPoints.Count; ++i0)
 				{
-					yield return CoroutineUtility.CoroutineCycle( GenerateRoadAlongRiverRecursive(nextPoint, nextPoint.NextPoints[i0], addedL, addedR));
+					yield return CoroutineUtility.CoroutineCycle( GenerateRoadAlongRiverRecursive(nextPoint, currentPoint, nextPoint.NextPoints[i0], addedL, addedR));
 				}
 			}
 			else

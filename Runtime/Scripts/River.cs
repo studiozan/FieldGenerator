@@ -18,6 +18,7 @@ namespace FieldGenerator
 
 			points.Clear();
 			vertices.Clear();
+			pointMap.Clear();
 
 			Vector3 initialPosition = DecideInitialPosition();
 			float initialAngle = DecideInitialAngle(initialPosition);
@@ -35,6 +36,7 @@ namespace FieldGenerator
 				Type = PointType.kRiver,
 			};
 			points.Add(point);
+			AddToPointMap(rootPoint);
 
 			minAngleForBranching = Mathf.Atan2(width * 0.5f, parameter.StepSize) * Mathf.Rad2Deg * 2;
 			canBranch = parameter.AngleRange >= minAngleForBranching;
@@ -45,6 +47,7 @@ namespace FieldGenerator
 		IEnumerator GenerateRiverRecursive(RiverPoint riverPoint, Vector3 dir, float bendability)
 		{
 			RiverPoint currentPoint = riverPoint;
+			Vector3 currentPos = currentPoint.Position;
 			Vector3 nextDir = dir;
 			int numStep = 0;
 			int totalStep = 0;
@@ -53,73 +56,293 @@ namespace FieldGenerator
 			float halfWidth = width * 0.5f;
 			var step = new Vector3(0, 0, parameter.StepSize);
 
-			while (IsInsideField(currentPoint.Position) != false)
+			while (IsInsideField(currentPos) != false)
 			{
 				++numStep;
 				++totalStep;
 
-				var nextPoint = new RiverPoint();
-				nextPoint.Position = currentPoint.Position + nextDir;
-				nextPoint.Width = width;
-				nextPoint.PrevPoint = currentPoint;
+				Vector3 nextPos = currentPos + nextDir;
+				Vector2Int currentChunk = GetChunk(currentPos);
+				Vector2Int nextChunk = GetChunk(nextPos);
 
-				float angle = Mathf.Atan2(nextDir.x, nextDir.z) * Mathf.Rad2Deg;
-
-				Vector3 normDir = nextDir.normalized;
-				var leftBase = new Vector3(-normDir.z, 0, normDir.x) * halfWidth;
-				var rightBase = new Vector3(normDir.z, 0, -normDir.x) * halfWidth;
-				Vector3 left = leftBase + currentPoint.Position;
-				Vector3 right = rightBase + currentPoint.Position;
-				Vector3 left2 = leftBase + nextPoint.Position;
-				Vector3 right2 = rightBase + nextPoint.Position;
-
-				if (System.DateTime.Now.Subtract(lastInterruptionTime).TotalMilliseconds >= FieldPointGenerator.kElapsedTimeToInterrupt)
+				bool isIntersecting = false;
+				RiverPoint absorptionPoint = null;
+				if (TryGetAbsorptionPoint(currentPos, nextPos, currentChunk, parameter.StepSize * 0.5f, out isIntersecting, out absorptionPoint) != false)
 				{
-					yield return null;
-					lastInterruptionTime = System.DateTime.Now;
-				}
-
-				if (canBranch != false && numStep >= numStepWithoutBranching)
-				{
-					if (DetectFromPercent(branchingProbability) != false)
+					List<RiverPoint> nextPoints = currentPoint.NextPoints;
+					if (nextPoints.Contains(absorptionPoint) == false)
 					{
-						numStep = 0;
-						branchingProbability = CalcBranchingProbability();
-						numStepWithoutBranching = CalcNumStepWithoutBranching();
-						float angle2 = angle + Mathf.Lerp(minAngleForBranching, angleRange, (float)random.NextDouble()) * (random.Next(2) == 0 ? -1 : 1);
-						Vector3 nextDir2 = Quaternion.Euler(0, angle2, 0) * step;
-						yield return CoroutineUtility.CoroutineCycle( GenerateRiverRecursive(currentPoint, nextDir2, bend));
+						nextPoints.Add(absorptionPoint);
+						points.Add(ToFieldPoint(absorptionPoint));
+
+						Vector3 normDir = (absorptionPoint.Position - currentPos).normalized;
+						var leftBase = new Vector3(-normDir.z, 0, normDir.x) * halfWidth;
+						var rightBase = new Vector3(normDir.z, 0, -normDir.x) * halfWidth;
+						Vector3 left = leftBase + currentPos;
+						Vector3 right = rightBase + currentPos;
+
+						vertices.Add(left);
+						vertices.Add(right);
+					}
+
+					List<RiverPoint> prevPoints = absorptionPoint.PrevPoints;
+					if (prevPoints.Contains(currentPoint) == false)
+					{
+						prevPoints.Add(currentPoint);
+					}
+
+					currentPoint = absorptionPoint;
+					currentPos = currentPoint.Position;
+
+					if (System.DateTime.Now.Subtract(lastInterruptionTime).TotalMilliseconds >= FieldPointGenerator.kElapsedTimeToInterrupt)
+					{
+						yield return null;
+						lastInterruptionTime = System.DateTime.Now;
 					}
 				}
-
-				currentPoint.NextPoints.Add(nextPoint);
-
-				var point = new FieldPoint
+				else
 				{
-					Position = nextPoint.Position,
-					Type = PointType.kRiver,
-				};
-				points.Add(point);
+					if (currentChunk != nextChunk &&
+						TryGetAbsorptionPoint(currentPos, nextPos, nextChunk, parameter.StepSize * 0.5f, out isIntersecting, out absorptionPoint) != false)
+					{
+						List<RiverPoint> nextPoints = currentPoint.NextPoints;
+						if (nextPoints.Contains(absorptionPoint) == false)
+						{
+							nextPoints.Add(absorptionPoint);
+							points.Add(ToFieldPoint(absorptionPoint));
 
-				vertices.Add(left);
-				vertices.Add(right);
+							Vector3 normDir = (absorptionPoint.Position - currentPos).normalized;
+							var leftBase = new Vector3(-normDir.z, 0, normDir.x) * halfWidth;
+							var rightBase = new Vector3(normDir.z, 0, -normDir.x) * halfWidth;
+							Vector3 left = leftBase + currentPos;
+							Vector3 right = rightBase + currentPos;
 
-				float nextAngle = angle + angleRange * (float)random.NextDouble() - angleRange * 0.5f;
-				bend *= (1.0f - parameter.BendabilityAttenuation);
-				nextAngle = Mathf.Lerp(angle, nextAngle, bend);
-				nextDir = Quaternion.Euler(0, nextAngle, 0) * step;
+							vertices.Add(left);
+							vertices.Add(right);
+						}
 
-				currentPoint = nextPoint;
+						List<RiverPoint> prevPoints = absorptionPoint.PrevPoints;
+						if (prevPoints.Contains(currentPoint) == false)
+						{
+							prevPoints.Add(currentPoint);
+						}
+
+						currentPoint = absorptionPoint;
+						currentPos = currentPoint.Position;
+
+						if (System.DateTime.Now.Subtract(lastInterruptionTime).TotalMilliseconds >= FieldPointGenerator.kElapsedTimeToInterrupt)
+						{
+							yield return null;
+							lastInterruptionTime = System.DateTime.Now;
+						}
+					}
+					else
+					{
+						var nextPoint = new RiverPoint();
+						nextPoint.Position = nextPos;
+						nextPoint.Width = width;
+						nextPoint.PrevPoints.Add(currentPoint);
+
+						float angle = Mathf.Atan2(nextDir.x, nextDir.z) * Mathf.Rad2Deg;
+
+						Vector3 normDir = nextDir.normalized;
+						var leftBase = new Vector3(-normDir.z, 0, normDir.x) * halfWidth;
+						var rightBase = new Vector3(normDir.z, 0, -normDir.x) * halfWidth;
+						Vector3 left = leftBase + currentPos;
+						Vector3 right = rightBase + currentPos;
+
+						if (System.DateTime.Now.Subtract(lastInterruptionTime).TotalMilliseconds >= FieldPointGenerator.kElapsedTimeToInterrupt)
+						{
+							yield return null;
+							lastInterruptionTime = System.DateTime.Now;
+						}
+
+						if (canBranch != false && numStep >= numStepWithoutBranching)
+						{
+							if (DetectFromPercent(branchingProbability) != false)
+							{
+								numStep = 0;
+								branchingProbability = CalcBranchingProbability();
+								numStepWithoutBranching = CalcNumStepWithoutBranching();
+								float angle2 = angle + Mathf.Lerp(minAngleForBranching, angleRange, (float)random.NextDouble()) * (random.Next(2) == 0 ? -1 : 1);
+								Vector3 nextDir2 = Quaternion.Euler(0, angle2, 0) * step;
+								yield return CoroutineUtility.CoroutineCycle( GenerateRiverRecursive(currentPoint, nextDir2, bend));
+							}
+						}
+
+						currentPoint.NextPoints.Add(nextPoint);
+
+						points.Add(ToFieldPoint(nextPoint));
+						AddToPointMap(nextPoint);
+
+						vertices.Add(left);
+						vertices.Add(right);
+
+						float nextAngle = angle + angleRange * (float)random.NextDouble() - angleRange * 0.5f;
+						bend *= (1.0f - parameter.BendabilityAttenuation);
+						nextAngle = Mathf.Lerp(angle, nextAngle, bend);
+						nextDir = Quaternion.Euler(0, nextAngle, 0) * step;
+
+						currentPoint = nextPoint;
+						currentPos = currentPoint.Position;
+					}
+				}
 			}
 
 			if (totalStep != 0)
 			{
 				Vector3 normDir = nextDir.normalized;
-				Vector3 left = new Vector3(-normDir.z, 0, normDir.x) * halfWidth + currentPoint.Position;
-				Vector3 right = new Vector3(normDir.z, 0, -normDir.x) * halfWidth + currentPoint.Position;
+				Vector3 left = new Vector3(-normDir.z, 0, normDir.x) * halfWidth + currentPos;
+				Vector3 right = new Vector3(normDir.z, 0, -normDir.x) * halfWidth + currentPos;
 				vertices.Add(left);
 				vertices.Add(right);
 			}
+		}
+
+		bool TryGetAbsorptionPoint(Vector3 s1, Vector3 e1, Vector2Int chunk, float distance, out bool isIntersecting, out RiverPoint absorptionPoint)
+		{
+			bool foundPoint = false;
+			isIntersecting = false;
+			absorptionPoint = null;
+
+			var nearestPoint = new KeyValuePair<float, RiverPoint>(float.MaxValue, null);
+
+			if (pointMap.TryGetValue(chunk, out List<RiverPoint> pointsInChunk) != false)
+			{
+				for (int i0 = 0; i0 < pointsInChunk.Count; ++i0)
+				{
+					RiverPoint currentPoint = pointsInChunk[i0];
+					Vector3 currentPos = currentPoint.Position;
+					var intersection = new Vector3();
+
+					List<RiverPoint> prevPoints = currentPoint.PrevPoints;
+					for (int i1 = 0; i1 < prevPoints.Count; ++i1)
+					{
+						RiverPoint prevPoint = prevPoints[i1];
+						Vector3 prevPos = prevPoint.Position;
+						if (IsIntersectingLineSegment(s1, e1, prevPos, currentPos) != false)
+						{
+							isIntersecting = true;
+							foundPoint = true;
+							TryGetIntersection(s1, e1, prevPos, currentPos, out intersection);
+							float dist1 = (prevPos - intersection).sqrMagnitude;
+							float dist2 = (currentPos - intersection).sqrMagnitude;
+							absorptionPoint = dist1 < dist2 ? prevPoint : currentPoint;
+							break;
+						}
+						else
+						{
+							float dist1 = (prevPos - e1).sqrMagnitude;
+							float dist2 = (currentPos - e1).sqrMagnitude;
+							if (dist1 < nearestPoint.Key)
+							{
+								nearestPoint = new KeyValuePair<float, RiverPoint>(dist1, prevPoint);
+							}
+							if (dist2 < nearestPoint.Key)
+							{
+								nearestPoint = new KeyValuePair<float, RiverPoint>(dist2, currentPoint);
+							}
+						}
+					}
+
+
+					List<RiverPoint> nextPoints = currentPoint.NextPoints;
+					for (int i1 = 0; i1 < nextPoints.Count; ++i1)
+					{
+						RiverPoint nextPoint = nextPoints[i1];
+						Vector3 nextPos = nextPoint.Position;
+						if (IsIntersectingLineSegment(s1, e1, currentPos, nextPos) != false)
+						{
+							isIntersecting = true;
+							foundPoint = true;
+							TryGetIntersection(s1, e1, currentPos, nextPos, out intersection);
+							float dist1 = (currentPos - intersection).sqrMagnitude;
+							float dist2 = (nextPos - intersection).sqrMagnitude;
+							absorptionPoint = dist1 < dist2 ? currentPoint : nextPoint;
+							break;
+						}
+						else
+						{
+							float dist1 = (currentPos - e1).sqrMagnitude;
+							float dist2 = (nextPos - e1).sqrMagnitude;
+							if (dist1 < nearestPoint.Key)
+							{
+								nearestPoint = new KeyValuePair<float, RiverPoint>(dist1, currentPoint);
+							}
+							if (dist2 < nearestPoint.Key)
+							{
+								nearestPoint = new KeyValuePair<float, RiverPoint>(dist2, nextPoint);
+							}
+						}
+					}
+
+					if (isIntersecting != false)
+					{
+						break;
+					}
+				}
+			}
+
+			if (isIntersecting == false)
+			{
+				if (nearestPoint.Key < distance * distance)
+				{
+					absorptionPoint = nearestPoint.Value;
+					foundPoint = true;
+				}
+			}
+
+			return foundPoint;
+		}
+
+		bool IsIntersectingLineSegment(Vector3 s1, Vector3 e1, Vector3 s2, Vector3 e2)
+		{
+			bool isIntersecting = false;
+
+			Vector3 dir = e1 - s1;
+			Vector3 v1 = s2 - s1;
+			Vector3 v2 = e2 - s1;
+
+			float cross1 = Vector3.Cross(dir, v1).y;
+			float cross2 = Vector3.Cross(dir, v2).y;
+			if (cross1 * cross2 < 0)
+			{
+				dir = e2 - s2;
+				v1 = s1 - s2;
+				v2 = e1 - s2;
+
+				cross1 = Vector3.Cross(dir, v1).y;
+				cross2 = Vector3.Cross(dir, v2).y;
+				if (cross1 * cross2 < 0)
+				{
+					isIntersecting = true;
+				}
+			}
+
+			return isIntersecting;
+		}
+
+		bool TryGetIntersection(Vector3 s1, Vector3 e1, Vector3 s2, Vector3 e2, out Vector3 intersection)
+		{
+			bool isIntersecting = false;
+			intersection = Vector3.zero;
+
+			Vector3 v1 = e1 - s1;
+			Vector3 v2 = s2 - s1;
+			Vector3 v3 = s1 - e2;
+			Vector3 v4 = e2 - s2;
+
+			float area1 = Vector3.Cross(v1, v2).y * 0.5f;
+			float area2 = Vector3.Cross(v1, v3).y * 0.5f;
+			float area = area1 + area2;
+
+			if (Mathf.Approximately(area, 0) == false)
+			{
+				isIntersecting = true;
+				intersection = s2 + v4 * area1 / area;
+			}
+
+			return isIntersecting;
 		}
 
 		Vector3 DecideInitialPosition()
@@ -261,12 +484,35 @@ namespace FieldGenerator
 			return x1 * y2 - y1 * x2;
 		}
 
-		Vector2Int GetChunk(Vector3 pos)
+		void AddToPointMap(RiverPoint point)
 		{
+			Vector2Int chunk = GetChunk(point.Position);
+			List<RiverPoint> pointsInChunk;
+			if (pointMap.TryGetValue(chunk, out pointsInChunk) == false)
+			{
+				pointsInChunk = new List<RiverPoint>();
+				pointMap.Add(chunk, pointsInChunk);
+			}
+			if (pointsInChunk.Contains(point) == false)
+			{
+				pointsInChunk.Add(point);
+			}
+		}
+
+		Vector2Int GetChunk(Vector3 position)
+		{
+			var chunk = new Vector2Int();
+
 			float chunkSize = parameter.ChunkSize;
-			int x = (int)(pos.x / chunkSize);
-			int y = (int)(pos.z / chunkSize);
-			return new Vector2Int(x, y);
+			chunk.x = Mathf.FloorToInt(position.x / chunkSize);
+			chunk.y = Mathf.FloorToInt(position.z / chunkSize);
+
+			return chunk;
+		}
+
+		FieldPoint ToFieldPoint(RiverPoint riverPoint)
+		{
+			return new FieldPoint { Position = riverPoint.Position, Type = PointType.kRiver };
 		}
 
 		float CalcBranchingProbability()
@@ -302,6 +548,9 @@ namespace FieldGenerator
 		RiverPoint rootPoint;
 		RiverParameter parameter;
 		List<Vector3> vertices = new List<Vector3>();
+
+		Dictionary<Vector2Int, List<RiverPoint>> pointMap = new Dictionary<Vector2Int, List<RiverPoint>>();
+
 		float width;
 		float branchingProbability;
 		int numStepWithoutBranching;
