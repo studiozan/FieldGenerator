@@ -112,7 +112,8 @@ namespace FieldGenerator
 						if (IsExistCombination(areaPoints) == false)
 						{
 							AddCombination(areaPoints);
-							List<Vector3> innerPoints = InnerArea(areaPoints, parameter.amountInwardMovement);
+							float amountInwardMovement = Mathf.Lerp(parameter.minAmountInwardMovement, parameter.maxAmountInwardMovement, (float)random.NextDouble());
+							List<Vector3> innerPoints = InnerArea(areaPoints, amountInwardMovement);
 							Vector3 dir1 = innerPoints[1] - innerPoints[0];
 							Vector3 dir2 = innerPoints[2] - innerPoints[1];
 							if (Vector3.Cross(dir1, dir2).y < 0)

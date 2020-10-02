@@ -55,9 +55,12 @@ namespace FieldGenerator
 		//碁盤目状道路の間隔
 		[SerializeField]
 		public float roadSpacing = 20;
-		//道路に囲まれたエリアを内側に寄せる量
+		//道路に囲まれたエリアを内側に寄せる量の最小
 		[SerializeField]
-		public float amountInwardMovement = 6;
+		public float minAmountInwardMovement = 6;
+		//道路に囲まれたエリアを内側に寄せる量の最大
+		[SerializeField]
+		public float maxAmountInwardMovement = 6;
 		//すごろく用の接続座標を間引く範囲の倍率
 		[SerializeField]
 		public float sugorokuMergeMulti = 1.75f;
