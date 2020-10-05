@@ -314,7 +314,7 @@ namespace FieldGenerator
 		public List<FieldConnectPoint> GetRiverConnectPointList()
 		{
 			// return connection.GetRiverConnectPointList();
-			return river.ConnectedPoints;
+			return river.Points;
 		}
 
 		public List<FieldConnectPoint> GetRoadConnectPointList()

@@ -17,9 +17,11 @@ namespace FieldGenerator
 			numStepWithoutBranching = CalcNumStepWithoutBranching();
 
 			points.Clear();
-			connectedPoints.Clear();
 			vertices.Clear();
-			pointMap.Clear();
+			riverPointsMap.Clear();
+			leftRightPoints.Clear();
+			pointLevels.Clear();
+			quadranglesMap.Clear();
 
 			Vector3 initialPosition = DecideInitialPosition();
 			float initialAngle = DecideInitialAngle(initialPosition);
@@ -27,18 +29,58 @@ namespace FieldGenerator
 			rootPoint = new RiverPoint();
 			rootPoint.Position = initialPosition;
 			rootPoint.Width = width;
-			var step = new Vector3(0, 0, parameter.StepSize);
-
-			Vector3 initialDir = Quaternion.Euler(0, initialAngle, 0) * step;
-
-			points.Add(ToFieldPoint(rootPoint));
 			AddToPointMap(rootPoint);
 
+			var step = new Vector3(0, 0, parameter.StepSize);
+			Vector3 initialDir = Quaternion.Euler(0, initialAngle, 0) * step;
 			minAngleForBranching = Mathf.Atan2(width * 0.5f, parameter.StepSize) * Mathf.Rad2Deg * 2;
 			canBranch = parameter.AngleRange >= minAngleForBranching;
 
 			yield return CoroutineUtility.CoroutineCycle( GenerateRiverRecursive(rootPoint, initialDir, 1));
 			ConnectPoints();
+
+			for (int i0 = 0; i0 < leftRightPoints.Count - 1; ++i0)
+			{
+				if (pointLevels[i0 + 1] - pointLevels[i0] == 1)
+				{
+					Vector3 v1, v2, v3, v4;
+					v1 = leftRightPoints[i0][0];
+					v2 = leftRightPoints[i0 + 1][0];
+					v3 = leftRightPoints[i0 + 1][1];
+					v4 = leftRightPoints[i0][1];
+					Vector2Int chunk1, chunk2, chunk3, chunk4;
+					chunk1 = GetChunk(v1);
+					chunk2 = GetChunk(v2);
+					chunk3 = GetChunk(v3);
+					chunk4 = GetChunk(v4);
+					var chunks = new List<Vector2Int>();
+					chunks.Add(chunk1);
+					if (chunk2 != chunk1)
+					{
+						chunks.Add(chunk2);
+					}
+					if (chunk3 != chunk1 && chunk3 != chunk2)
+					{
+						chunks.Add(chunk3);
+					}
+					if (chunk4 != chunk1 && chunk4 != chunk2 && chunk4 != chunk3)
+					{
+						chunks.Add(chunk4);
+					}
+
+					for (int i1 = 0; i1 < chunks.Count; ++i1)
+					{
+						Vector2Int chunk = chunks[i1];
+						List<Vector3[]> quadrangles;
+						if (quadranglesMap.TryGetValue(chunk, out quadrangles) == false)
+						{
+							quadrangles = new List<Vector3[]>();
+							quadranglesMap.Add(chunk, quadrangles);
+						}
+						quadrangles.Add(new Vector3[] { v1, v2, v3, v4 });
+					}
+				}
+			}
 		}
 
 		IEnumerator GenerateRiverRecursive(RiverPoint riverPoint, Vector3 dir, float bendability)
@@ -109,10 +151,7 @@ namespace FieldGenerator
 					nextPoint.Position = nextPos;
 					nextPoint.Width = width;
 					nextPoint.PrevPoints.Add(currentPoint);
-
 					currentPoint.NextPoints.Add(nextPoint);
-
-					points.Add(ToFieldPoint(nextPoint));
 					AddToPointMap(nextPoint);
 
 					Vector3 normDir = nextDir.normalized;
@@ -152,7 +191,7 @@ namespace FieldGenerator
 			bool isIntersecting = false;
 			var nearestPoint = new KeyValuePair<float, RiverPoint>(float.MaxValue, null);
 
-			if (pointMap.TryGetValue(chunk, out List<RiverPoint> pointsInChunk) != false)
+			if (riverPointsMap.TryGetValue(chunk, out List<RiverPoint> pointsInChunk) != false)
 			{
 				for (int i0 = 0; i0 < pointsInChunk.Count; ++i0)
 				{
@@ -247,7 +286,6 @@ namespace FieldGenerator
 			if (nextPoints.Contains(absorptionPoint) == false)
 			{
 				nextPoints.Add(absorptionPoint);
-				points.Add(ToFieldPoint(absorptionPoint));
 
 				Vector3 normDir = (absorptionPoint.Position - currentPos).normalized;
 				float halfWidth = width * 0.5f;
@@ -404,18 +442,17 @@ namespace FieldGenerator
 		{
 			bool isInside = false;
 
-			for (int i0 = 0; i0 < points.Count - 1; ++i0)
+			Vector2Int chunk = GetChunk(pos);
+			if (quadranglesMap.TryGetValue(chunk, out List<Vector3[]> quadrangles) != false)
 			{
-				int baseIndex = i0 * 2;
-				Vector3 v1 = vertices[baseIndex];
-				Vector3 v2 = vertices[baseIndex + 2];
-				Vector3 v3 = vertices[baseIndex + 3];
-				Vector3 v4 = vertices[baseIndex + 1];
-
-				if (IsInsideQuadrangle(v1, v2, v3, v4, pos) != false)
+				for (int i0 = 0; i0 < quadrangles.Count; ++i0)
 				{
-					isInside = true;
-					break;
+					Vector3[] quadrangle = quadrangles[i0];
+					if (IsInsideQuadrangle(quadrangle[0], quadrangle[1], quadrangle[2], quadrangle[3], pos) != false)
+					{
+						isInside = true;
+						break;
+					}
 				}
 			}
 
@@ -460,10 +497,10 @@ namespace FieldGenerator
 		{
 			Vector2Int chunk = GetChunk(point.Position);
 			List<RiverPoint> pointsInChunk;
-			if (pointMap.TryGetValue(chunk, out pointsInChunk) == false)
+			if (riverPointsMap.TryGetValue(chunk, out pointsInChunk) == false)
 			{
 				pointsInChunk = new List<RiverPoint>();
-				pointMap.Add(chunk, pointsInChunk);
+				riverPointsMap.Add(chunk, pointsInChunk);
 			}
 			if (pointsInChunk.Contains(point) == false)
 			{
@@ -480,11 +517,6 @@ namespace FieldGenerator
 			chunk.y = Mathf.FloorToInt(position.z / chunkSize);
 
 			return chunk;
-		}
-
-		FieldPoint ToFieldPoint(RiverPoint riverPoint)
-		{
-			return new FieldPoint { Position = riverPoint.Position, Type = PointType.kRiver };
 		}
 
 		FieldConnectPoint ToFieldConnectPoint(RiverPoint riverPoint)
@@ -508,22 +540,39 @@ namespace FieldGenerator
 		{
 			var connectPointMap = new Dictionary<RiverPoint, FieldConnectPoint>();
 			FieldConnectPoint point = ToFieldConnectPoint(rootPoint);
-			connectedPoints.Add(point);
+			point.Index = 0;
+			points.Add(point);
 			connectPointMap.Add(rootPoint, point);
+			leftRightPoints.Add(new Vector3[] { vertices[0], vertices[1] });
+			pointLevels.Add(0);
 			List<RiverPoint> nextPoints = rootPoint.NextPoints;
 			for (int i0 = 0; i0 < nextPoints.Count; ++i0)
 			{
-				ConnectPointsRecursive(point, nextPoints[i0], connectPointMap);
+				ConnectPointsRecursive(point, nextPoints[i0], connectPointMap, 1);
 			}
 		}
 
-		void ConnectPointsRecursive(FieldConnectPoint prevPoint, RiverPoint currentPoint, Dictionary<RiverPoint, FieldConnectPoint> connectPointMap)
+		void ConnectPointsRecursive(FieldConnectPoint prevPoint, RiverPoint currentPoint, Dictionary<RiverPoint, FieldConnectPoint> connectPointMap, int pointLevel)
 		{
 			if (connectPointMap.TryGetValue(currentPoint, out FieldConnectPoint point) == false)
 			{
 				point = ToFieldConnectPoint(currentPoint);
-				connectedPoints.Add(point);
+				point.Index = points.Count;
+				points.Add(point);
 				connectPointMap.Add(currentPoint, point);
+				int leftIndex = leftRightPoints.Count * 2;
+				leftRightPoints.Add(new Vector3[] { vertices[leftIndex], vertices[leftIndex + 1] });
+				if (point.Index - prevPoint.Index > 1)
+				{
+					leftRightPoints.Add(new Vector3[] { vertices[leftIndex + 2], vertices[leftIndex + 3] });
+					pointLevels.Add(pointLevel - 1);
+					pointLevels.Add(pointLevel);
+
+				}
+				else
+				{
+					pointLevels.Add(pointLevel);
+				}
 
 				prevPoint.SetConnection(point);
 				point.SetConnection(prevPoint);
@@ -531,24 +580,22 @@ namespace FieldGenerator
 				List<RiverPoint> nextPoints = currentPoint.NextPoints;
 				for (int i0 = 0; i0 < nextPoints.Count; ++i0)
 				{
-					ConnectPointsRecursive(point, nextPoints[i0], connectPointMap);
+					ConnectPointsRecursive(point, nextPoints[i0], connectPointMap, pointLevel + 1);
 				}
 			}
 			else
 			{
 				prevPoint.SetConnection(point);
 				point.SetConnection(prevPoint);
+				int leftIndex = leftRightPoints.Count * 2;
+				leftRightPoints.Add(new Vector3[] { vertices[leftIndex], vertices[leftIndex + 1] });
+				pointLevels.Add(pointLevel);
 			}
 		}
 
-		public List<FieldPoint> Points
+		public List<FieldConnectPoint> Points
 		{
 			get => points;
-		}
-
-		public List<FieldConnectPoint> ConnectedPoints
-		{
-			get => connectedPoints;
 		}
 
 		public RiverPoint RootPoint
@@ -565,13 +612,15 @@ namespace FieldGenerator
 
 		System.DateTime lastInterruptionTime;
 
-		List<FieldPoint> points = new List<FieldPoint>();
-		List<FieldConnectPoint> connectedPoints = new List<FieldConnectPoint>();
+		List<FieldConnectPoint> points = new List<FieldConnectPoint>();
 		RiverPoint rootPoint;
 		RiverParameter parameter;
 		List<Vector3> vertices = new List<Vector3>();
 
-		Dictionary<Vector2Int, List<RiverPoint>> pointMap = new Dictionary<Vector2Int, List<RiverPoint>>();
+		Dictionary<Vector2Int, List<RiverPoint>> riverPointsMap = new Dictionary<Vector2Int, List<RiverPoint>>();
+		List<Vector3[]> leftRightPoints = new List<Vector3[]>();
+		List<int> pointLevels = new List<int>();
+		Dictionary<Vector2Int, List<Vector3[]>> quadranglesMap = new Dictionary<Vector2Int, List<Vector3[]>>();
 
 		float width;
 		float branchingProbability;
