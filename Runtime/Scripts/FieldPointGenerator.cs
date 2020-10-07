@@ -29,10 +29,12 @@ namespace FieldGenerator
 
 		public IEnumerator Generate()
 		{
+			lastInterruptionTime = System.DateTime.Now;
 			fieldPoints.Clear();
+			combination.Clear();
 
-			yield return CoroutineUtility.CoroutineCycle( GenerateRiver());
-			yield return CoroutineUtility.CoroutineCycle( GenerateRoad());
+			GenerateRiver();
+			GenerateRoad();
 
 			connection.FieldConnectCreate(
 				fieldPoints,
@@ -42,14 +44,14 @@ namespace FieldGenerator
 				parameter.sugorokuMergeMulti,
 				parameter.sugorokuOffset);
 
-			yield return CoroutineUtility.CoroutineCycle( DetectSurroundedArea());
+			DetectSurroundedArea();
 
 			OnGenerate?.Invoke(this);
-			
-			combination.Clear();
+
+			yield break;
 		}
 
-		IEnumerator GenerateRiver()
+		void GenerateRiver()
 		{
 			var param = new RiverParameter
 			{
@@ -67,11 +69,11 @@ namespace FieldGenerator
 				BendabilityAttenuation = parameter.bendabilityAttenuation,
 			};
 
-			yield return CoroutineUtility.CoroutineCycle( river.Generate(param, random));
+			river.Generate(param, random);
 			fieldPoints.AddRange(river.Points);
 		}
 
-		IEnumerator GenerateRoad()
+		void GenerateRoad()
 		{
 			var param = new RoadParameter
 			{
@@ -82,14 +84,12 @@ namespace FieldGenerator
 				Spacing = parameter.roadSpacing,
 			};
 
-			yield return CoroutineUtility.CoroutineCycle( road.Generate(param, river, random));
+			road.Generate(param, river, random);
 			fieldPoints.AddRange(road.Points);
 		}
 
-		IEnumerator DetectSurroundedArea()
+		void DetectSurroundedArea()
 		{
-			lastInterruptionTime = System.DateTime.Now;
-
 			areas.Clear();
 			List<FieldConnectPoint> roadConnectedPoints = connection.GetRoadConnectPointList();
 			for (int i0 = 0; i0 < roadConnectedPoints.Count; ++i0)
@@ -135,12 +135,6 @@ namespace FieldGenerator
 								}
 							}
 						}
-					}
-
-					if (System.DateTime.Now.Subtract(lastInterruptionTime).TotalMilliseconds >= kElapsedTimeToInterrupt)
-					{
-						yield return null;
-						lastInterruptionTime = System.DateTime.Now;
 					}
 				}
 			}

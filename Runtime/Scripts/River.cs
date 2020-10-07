@@ -6,7 +6,7 @@ namespace FieldGenerator
 {
 	public class River
 	{
-		public IEnumerator Generate(RiverParameter parameter, System.Random random)
+		public void Generate(RiverParameter parameter, System.Random random)
 		{
 			lastInterruptionTime = System.DateTime.Now;
 
@@ -36,9 +36,9 @@ namespace FieldGenerator
 			minAngleForBranching = Mathf.Atan2(width * 0.5f, parameter.StepSize) * Mathf.Rad2Deg * 2;
 			canBranch = parameter.AngleRange >= minAngleForBranching;
 
-			yield return CoroutineUtility.CoroutineCycle( GenerateRiverRecursive(rootPoint, initialDir, 1));
-			ConnectPoints();
+			GenerateRiverRecursive(rootPoint, initialDir, 1);
 
+			ConnectPoints();
 			for (int i0 = 0; i0 < leftRightPoints.Count - 1; ++i0)
 			{
 				if (pointLevels[i0 + 1] - pointLevels[i0] == 1)
@@ -83,7 +83,7 @@ namespace FieldGenerator
 			}
 		}
 
-		IEnumerator GenerateRiverRecursive(RiverPoint riverPoint, Vector3 dir, float bendability)
+		void GenerateRiverRecursive(RiverPoint riverPoint, Vector3 dir, float bendability)
 		{
 			RiverPoint currentPoint = riverPoint;
 			Vector3 currentPos = currentPoint.Position;
@@ -98,12 +98,6 @@ namespace FieldGenerator
 
 			while (IsInsideField(currentPos) != false)
 			{
-				if (System.DateTime.Now.Subtract(lastInterruptionTime).TotalMilliseconds >= FieldPointGenerator.kElapsedTimeToInterrupt)
-				{
-					yield return null;
-					lastInterruptionTime = System.DateTime.Now;
-				}
-
 				++numStep;
 				++totalStep;
 
@@ -143,7 +137,7 @@ namespace FieldGenerator
 							numStepWithoutBranching = CalcNumStepWithoutBranching();
 							float angle2 = angle + Mathf.Lerp(minAngleForBranching, angleRange, (float)random.NextDouble()) * (random.Next(2) == 0 ? -1 : 1);
 							Vector3 nextDir2 = Quaternion.Euler(0, angle2, 0) * step;
-							yield return CoroutineUtility.CoroutineCycle( GenerateRiverRecursive(currentPoint, nextDir2, bend));
+							GenerateRiverRecursive(currentPoint, nextDir2, bend);
 						}
 					}
 

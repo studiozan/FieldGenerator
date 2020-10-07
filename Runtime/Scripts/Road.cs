@@ -6,7 +6,7 @@ namespace FieldGenerator
 {
 	public class Road
 	{
-		public IEnumerator Generate(RoadParameter parameter, River river, System.Random random)
+		public void Generate(RoadParameter parameter, River river, System.Random random)
 		{
 			lastInterruptionTime = System.DateTime.Now;
 			this.parameter = parameter;
@@ -18,12 +18,12 @@ namespace FieldGenerator
 			points.Clear();
 			pointMap.Clear();
 
-			yield return CoroutineUtility.CoroutineCycle( GenerateDistrictRoad());
-			yield return CoroutineUtility.CoroutineCycle( GenerateRoadAlongRiver(river.RootPoint));
-			yield return CoroutineUtility.CoroutineCycle( GenerateGridRoad());
+			GenerateDistrictRoad();
+			GenerateRoadAlongRiver(river.RootPoint);
+			GenerateGridRoad();
 		}
 
-		IEnumerator GenerateDistrictRoad()
+		void GenerateDistrictRoad()
 		{
 			districtRoadPoints.Clear();
 			float chunkSize = parameter.ChunkSize;
@@ -46,26 +46,20 @@ namespace FieldGenerator
 						districtRoadPoints.Add(point);
 						AddToPointMap(point);
 					}
-
-					if (System.DateTime.Now.Subtract(lastInterruptionTime).TotalMilliseconds >= FieldPointGenerator.kElapsedTimeToInterrupt)
-					{
-						yield return null;
-						lastInterruptionTime = System.DateTime.Now;
-					}
 				}
 			}
 
 			points.AddRange(districtRoadPoints);
 		}
 
-		IEnumerator GenerateRoadAlongRiver(RiverPoint riverRoot)
+		void GenerateRoadAlongRiver(RiverPoint riverRoot)
 		{
 			roadAlongRiverPoints.Clear();
 			leftRoadPoints.Clear();
 			rightRoadPoints.Clear();
 			for (int i0 = 0; i0 < riverRoot.NextPoints.Count; ++i0)
 			{
-				yield return CoroutineUtility.CoroutineCycle( GenerateRoadAlongRiverRecursive(riverRoot, null, riverRoot.NextPoints[i0], false, false));
+				GenerateRoadAlongRiverRecursive(riverRoot, null, riverRoot.NextPoints[i0], false, false);
 			}
 
 			roadAlongRiverPoints.AddRange(leftRoadPoints);
@@ -74,7 +68,7 @@ namespace FieldGenerator
 			points.AddRange(roadAlongRiverPoints);
 		}
 
-		IEnumerator GenerateRoadAlongRiverRecursive(RiverPoint currentPoint, RiverPoint prevPoint, RiverPoint nextPoint, bool addedLeftPoint, bool addedRightPoint)
+		void GenerateRoadAlongRiverRecursive(RiverPoint currentPoint, RiverPoint prevPoint, RiverPoint nextPoint, bool addedLeftPoint, bool addedRightPoint)
 		{
 			Vector3 pos = currentPoint.Position;
 			Vector3 nextPos = nextPoint.Position;
@@ -126,17 +120,11 @@ namespace FieldGenerator
 				}
 			}
 
-			if (System.DateTime.Now.Subtract(lastInterruptionTime).TotalMilliseconds >= FieldPointGenerator.kElapsedTimeToInterrupt)
-			{
-				yield return null;
-				lastInterruptionTime = System.DateTime.Now;
-			}
-
 			if (nextPoint.NextPoints.Count > 0)
 			{
 				for (int i0 = 0; i0 < nextPoint.NextPoints.Count; ++i0)
 				{
-					yield return CoroutineUtility.CoroutineCycle( GenerateRoadAlongRiverRecursive(nextPoint, currentPoint, nextPoint.NextPoints[i0], addedL, addedR));
+					GenerateRoadAlongRiverRecursive(nextPoint, currentPoint, nextPoint.NextPoints[i0], addedL, addedR);
 				}
 			}
 			else
@@ -167,7 +155,7 @@ namespace FieldGenerator
 			}
 		}
 
-		IEnumerator GenerateGridRoad()
+		void GenerateGridRoad()
 		{
 			gridRoadPoints.Clear();
 			for (int row = 0; row < parameter.NumberOfChunk.y; ++row)
@@ -431,12 +419,6 @@ namespace FieldGenerator
 						}
 						gridRoadPoints.AddRange(rightPoints);
 						//----------------------------
-					}
-
-					if (System.DateTime.Now.Subtract(lastInterruptionTime).TotalMilliseconds >= FieldPointGenerator.kElapsedTimeToInterrupt)
-					{
-						yield return null;
-						lastInterruptionTime = System.DateTime.Now;
 					}
 				}
 			}
