@@ -33,25 +33,80 @@ namespace FieldGenerator
 		 * @param sugorokuMergeMulti	すごろく用の接続座標を間引く範囲の倍率
 		 * @param sugorokuOfset	すごろく用の接続座標を外周から指定された距離分を間引く時の値
 		 */
-		public void FieldConnectCreate( List<FieldPoint> fieldList, float interval, Vector3 fieldSize, float riverInterval = 10f, float sugorokuMergeMulti = 1.75f,
+		public void FieldConnectCreate( List<FieldPoint> fieldList, float interval, float chunkSize, Vector2Int numChunks, float riverInterval = 10f, float sugorokuMergeMulti = 1.75f,
 			float sugorokuOfset = 1000f)
 		{
 			/* フィールドの座標情報のリストを設定 */
 			fieldPointList = fieldList;
 
+			var fieldSize = new Vector3(chunkSize * numChunks.x, 0, chunkSize * numChunks.y);
+
 			SetFieldPoint();
 
 			/* 川を繋げる */
-			SetConnection( riverConnectPointList, riverInterval, fieldSize, true);
+			SetConnection( riverConnectPointList, riverInterval, chunkSize, numChunks, true);
 			/* 道路を全て繋げる */
-			SetConnection( roadConnectPointList, interval, fieldSize);
+			SetConnection( roadConnectPointList, interval, chunkSize, numChunks);
 			/* すごろくで使う道路を繋げる */
 			float power = sugorokuMergeMulti;
 			if( power < 1f)
 			{
 				power = 1f;
 			}
-			SetConnection( sugorokuConnectPointList, interval * ( power * 2f - 1f), fieldSize, false, interval * power, sugorokuOfset);
+			/* 外周から一定範囲の点を間引く処理 */
+			OuterPointThinning( sugorokuConnectPointList, sugorokuOfset);
+			FieldPointMerge( sugorokuConnectPointList, interval * power);
+			SetConnection( sugorokuConnectPointList, interval * ( power * 2f - 1f), chunkSize, numChunks, false);
+		}
+
+		Dictionary<Vector2Int, List<FieldConnectPoint>> CreatePointsMap(List<FieldConnectPoint> points, float chunkSize)
+		{
+			var pointsMap = new Dictionary<Vector2Int, List<FieldConnectPoint>>();
+
+			for (int i0 = 0; i0 < points.Count; ++i0)
+			{
+				FieldConnectPoint point = points[i0];
+				Vector2Int chunk = GetChunk(point.Position, chunkSize);
+				List<FieldConnectPoint> pointsInChunk;
+				if (pointsMap.TryGetValue(chunk, out pointsInChunk) == false)
+				{
+					pointsInChunk = new List<FieldConnectPoint>();
+					pointsMap.Add(chunk, pointsInChunk);
+				}
+
+				pointsInChunk.Add(point);
+			}
+
+			return pointsMap;
+		}
+
+		Vector2Int GetChunk(Vector3 pos, float chunkSize)
+		{
+			return new Vector2Int(Mathf.FloorToInt(pos.x / chunkSize), Mathf.FloorToInt(pos.z / chunkSize));
+		}
+
+		List<Vector2Int> GetChunksAround(Vector3 pos, float chunkSize, Vector2Int numChunks)
+		{
+			var chunks = new List<Vector2Int>();
+
+			Vector2Int centerChunk = GetChunk(pos, chunkSize);
+			for (int i0 = 0; i0 < 3; ++i0)
+			{
+				int y = centerChunk.y - 1 + i0;
+				if (y >= 0 && y <= numChunks.y)
+				{
+					for (int i1 = 0; i1 < 3; ++i1)
+					{
+						int x = centerChunk.x - 1 + i1;
+						if (x >= 0 && x <= numChunks.x)
+						{
+							chunks.Add(new Vector2Int(x, y));
+						}
+					}
+				}
+			}
+
+			return chunks;
 		}
 
 		/**
@@ -128,104 +183,42 @@ namespace FieldGenerator
 		 * @param random		接続する確率
 		 * @param maxNum		接続する最大数。-1の場合は判定しない
 		 */
-		public void SetConnection( List<FieldConnectPoint> pointList, float interval, Vector3 fieldSize, bool inOrder = false, float mergeSize = 0f,
-			float ofsetSize = 0f, float random = 1f, int maxNum = -1)
+		public void SetConnection( List<FieldConnectPoint> pointList, float interval, float chunkSize, Vector2Int numChunks, bool inOrder = false, float random = 1f, int maxNum = -1)
 		{
-			int i0, i1, i2, index, randomCount, count;
-			float itv, length, checkTheta = 0.707f, theta, rand;
-			bool flg, orderFlag;
-			Vector3 sub = Vector3.zero, currentPosition;
-			FieldConnectPoint currentPoint;
-			var direction = new Vector3[ 4];
+			int index;
+			float checkTheta = 0.707f;
 			var min = new float[ 4];
 			var no = new int[ 4];
-			itv = interval * 1.5f;
+			float itv = interval * 1.5f;
 			itv = itv * itv;
-			randomCount = 0;
-			var splitList = new List<List<FieldConnectPoint>>();
+			int randomCount = 0;
 
-			int loopCount;
-			var splitFlag = false;
+			var pointsMap = CreatePointsMap(pointList, chunkSize);
 
+			var direction = new Vector3[ 4];
 			direction[ 0] = Vector3.forward;
 			direction[ 1] = Vector3.back;
 			direction[ 2] = Vector3.right;
 			direction[ 3] = Vector3.left;
 
-			float halfSize;
-			if( fieldSize.x > fieldSize.z)
+			for(int i0 = 0; i0 < pointList.Count; ++i0)
 			{
-				halfSize = fieldSize.x * 0.33f;
-			}
-			else
-			{
-				halfSize = fieldSize.z * 0.33f;
-			}
-			
-			/* 外周から一定範囲の点を間引く処理 */
-			if( ofsetSize > 0f)
-			{
-				OuterPointThinning( pointList, ofsetSize);
-			}
-			/* 頂点を間引く処理 */
-			if( mergeSize > 0f)
-			{
-				FieldPointMerge( pointList, mergeSize);
-			}
-			for( i0 = 0; i0 < 9; ++i0)
-			{
-				var list = new List<FieldConnectPoint>();
-				splitList.Add( list);
-			}
-			int listIndex;
-			if( pointList.Count > 500)
-			{
-				splitFlag = true;
-			}
-			
-			/* 9分割の座標リストを作成 */
-			//  TODO: まだ無駄が多いので、36分割ぐらいした状態で求める座標に応じて周囲9マスのリストをまとめて1回のfor文で探査が終わるように変更したい
-			for( i0 = 0; i0 < pointList.Count; ++i0)
-			{
-				currentPosition = pointList[ i0].Position;
-				if( splitFlag != false)
+				FieldConnectPoint currentPoint = pointList[ i0];
+				List<Vector2Int> chunks = GetChunksAround(currentPoint.Position, chunkSize, numChunks);
+				var targetPoints = new List<FieldConnectPoint>();
+				for (int i1 = 0; i1 < chunks.Count; ++i1)
 				{
-					if( currentPosition.x < halfSize)
+					if (pointsMap.TryGetValue(chunks[i1], out List<FieldConnectPoint> points) != false)
 					{
-						listIndex = 0;
-					}
-					else if( currentPosition.x > halfSize * 2f)
-					{
-						listIndex = 2;
-					}
-					else
-					{
-						listIndex = 1;
-					}
-					if( currentPosition.z > halfSize * 2f)
-					{
-						listIndex += 6;
-					}
-					else if( currentPosition.z > halfSize)
-					{
-						listIndex += 3;
+						targetPoints.AddRange(points);
 					}
 				}
-				else
-				{
-					listIndex = 0;
-				}
-				splitList[ listIndex].Add( pointList[ i0]);
-			}
-			for( i0 = 0; i0 < pointList.Count; ++i0)
-			{
-				currentPoint = pointList[ i0];
 				if( maxNum >= 0 && maxNum <= randomCount)
 				{
 					/* ランダムで作る最大数に達しているので処理を終わる */
 					return;
 				}
-				rand = (float)randomSystem.NextDouble();
+				float rand = (float)randomSystem.NextDouble();
 				if( rand > random)
 				{
 					/* ランダムに判定しない */
@@ -233,40 +226,12 @@ namespace FieldGenerator
 				}
 				min[ 0] = itv;	min[ 1] = itv;	min[ 2] = itv;	min[ 3] = itv;
 				no[ 0] = -1;	no[ 1] = -1;	no[ 2] = -1;	no[ 3] = -1;
-				orderFlag = false;
-				count = currentPoint.ConnectionList.Count;
+				bool orderFlag = false;
+				int count = currentPoint.ConnectionList.Count;
 
-				if( currentPoint.Position.x < halfSize)
+				if( count < 4)
 				{
-					listIndex = 0;
-				}
-				else if( currentPoint.Position.x > halfSize * 2f)
-				{
-					listIndex = 2;
-				}
-				else
-				{
-					listIndex = 1;
-				}
-				if( currentPoint.Position.z > halfSize * 2f)
-				{
-					listIndex += 6;
-				}
-				else if( currentPoint.Position.z > halfSize)
-				{
-					listIndex += 3;
-				}
-				if( splitFlag == false)
-				{
-					listIndex = 0;
-				}
-				loopCount = 0;
-
-				while( count < 4)
-				{
-				//min[ 0] = itv;	min[ 1] = itv;	min[ 2] = itv;	min[ 3] = itv;
-					no[ 0] = -1;	no[ 1] = -1;	no[ 2] = -1;	no[ 3] = -1;
-					for( i1 = 0; i1 < splitList[ listIndex].Count; ++i1)
+					for(int i1 = 0; i1 < targetPoints.Count; ++i1)
 					{
 						if( inOrder != false && count > 0)
 						{
@@ -278,7 +243,7 @@ namespace FieldGenerator
 									break;
 								}
 								i1 = i0 + 1;
-								if( i1 >= splitList[ listIndex].Count)
+								if( i1 >= targetPoints.Count)
 								{
 									break;
 								}
@@ -292,7 +257,7 @@ namespace FieldGenerator
 						}
 						if( currentPoint.Type == PointType.kRoadAlongRiver)
 						{
-							if( splitList[ listIndex][ i1].Type == PointType.kRoadAlongRiver)
+							if( targetPoints[ i1].Type == PointType.kRoadAlongRiver)
 							{
 								/* 川沿いの道路は川と同じように前後の座標と結ぶようにする */
 								if( i1 != i0 + 1)
@@ -306,19 +271,20 @@ namespace FieldGenerator
 								continue;
 							}
 						}
-						sub.x = splitList[ listIndex][ i1].Position.x - currentPoint.Position.x;
-						sub.z = splitList[ listIndex][ i1].Position.z - currentPoint.Position.z;
-						length = sub.x * sub.x + sub.z * sub.z;
+						Vector3 sub = Vector3.zero;
+						sub.x = targetPoints[ i1].Position.x - currentPoint.Position.x;
+						sub.z = targetPoints[ i1].Position.z - currentPoint.Position.z;
+						float length = sub.x * sub.x + sub.z * sub.z;
 						if( length > itv)
 						{
 							/* 距離が離れているものは判定しない */
 							continue;
 						}
 						sub = sub.normalized;
-						flg = false;
-						for( i2 = 0; i2 < 4; ++i2)
+						bool flg = false;
+						for(int i2 = 0; i2 < 4; ++i2)
 						{
-							theta = sub.x * direction[ i2].x + sub.z * direction[ i2].z;
+							float theta = sub.x * direction[ i2].x + sub.z * direction[ i2].z;
 							if( theta <= checkTheta)
 							{
 								/* 角度の条件を満たしていない */
@@ -341,160 +307,26 @@ namespace FieldGenerator
 						{
 							if( orderFlag != false)
 							{
-								i1 = splitList[ listIndex].Count;
+								i1 = targetPoints.Count;
 							}
 						}
 					}
-					for( i2 = 0; i2 < direction.Length; ++i2)
+					for(int i1 = 0; i1 < direction.Length; ++i1)
 					{
-						if( no[ i2] < 0)
+						if( no[ i1] < 0)
 						{
 							/* この方向に繋げる座標が無かった */
 							continue;
 						}
-						index = no[ i2];
-						currentPoint.SetConnection( splitList[ listIndex][ index]);
-						splitList[ listIndex][ index].SetConnection( currentPoint);
+						index = no[ i1];
+						currentPoint.SetConnection( targetPoints[ index]);
+						targetPoints[ index].SetConnection( currentPoint);
 					}
 					++randomCount;
-					/* 接続点が4つ未満の場合は、別の座標リストも参照するようにする */
-					if( count < 4)
-					{
-						if( splitFlag == false)
-						{
-							break;
-						}
-						++loopCount;
-						if( loopCount > 1)
-						{
-							break;
-						}
-						if( NextBlockCheck( currentPoint.Position, 150f, halfSize) == false)
-						{
-							break;
-						}
-						switch( listIndex)
-						{
-							case 0:
-							if( currentPoint.Position.x > halfSize - 500f)
-							{
-								listIndex = 1;
-							}
-							else
-							{
-								listIndex = 3;
-							}
-							break;
-							case 1:
-							if( currentPoint.Position.x > halfSize * 2f - 500f)
-							{
-								listIndex = 2;
-							}
-							else if( currentPoint.Position.x < halfSize + 500f)
-							{
-								listIndex = 0;
-							}
-							else
-							{
-								listIndex = 4;
-							}
-							break;
-							case 2:
-							if( currentPoint.Position.x < halfSize * 2f + 500f)
-							{
-								listIndex = 1;
-							}
-							else
-							{
-								listIndex = 5;
-							}
-							break;
-							case 3:
-							if( currentPoint.Position.z > halfSize * 2f - 500f)
-							{
-								listIndex = 6;
-							}
-							else if( currentPoint.Position.x < halfSize + 500f)
-							{
-								listIndex = 0;
-							}
-							else
-							{
-								listIndex = 4;
-							}
-							break;
-							case 4:
-							if( currentPoint.Position.x > halfSize * 2f - 500f)
-							{
-								listIndex = 5;
-							}
-							else if( currentPoint.Position.x < halfSize + 500f)
-							{
-								listIndex = 3;
-							}
-							else if( currentPoint.Position.z > halfSize * 2f - 500f)
-							{
-								listIndex = 7;
-							}
-							else
-							{
-								listIndex = 1;
-							}
-							break;
-							case 5:
-							if( currentPoint.Position.z > halfSize * 2f - 500f)
-							{
-								listIndex = 8;
-							}
-							else if( currentPoint.Position.x < halfSize + 500f)
-							{
-								listIndex = 2;
-							}
-							else
-							{
-								listIndex = 4;
-							}
-							break;
-							case 6:
-							if( currentPoint.Position.x > halfSize - 500f)
-							{
-								listIndex = 7;
-							}
-							else
-							{
-								listIndex = 3;
-							}
-							break;
-							case 7:
-							if( currentPoint.Position.x > halfSize * 2f - 500f)
-							{
-								listIndex = 8;
-							}
-							else if( currentPoint.Position.x < halfSize + 500f)
-							{
-								listIndex = 6;
-							}
-							else
-							{
-								listIndex = 4;
-							}
-							break;
-							case 8:
-							if( currentPoint.Position.x < halfSize * 2f + 500f)
-							{
-								listIndex = 1;
-							}
-							else
-							{
-								listIndex = 5;
-							}
-							break;
-						}
-					}
 				}
 			}
 			/* 孤立している点は削除する */
-			for( i0 = pointList.Count - 1; i0 >= 0; --i0)
+			for(int i0 = pointList.Count - 1; i0 >= 0; --i0)
 			{
 				if( pointList[ i0].ConnectionList.Count == 0)
 				{
