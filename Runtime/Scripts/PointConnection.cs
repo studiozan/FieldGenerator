@@ -85,30 +85,6 @@ namespace FieldGenerator
 			return new Vector2Int(Mathf.FloorToInt(pos.x / chunkSize), Mathf.FloorToInt(pos.z / chunkSize));
 		}
 
-		List<Vector2Int> GetChunksAround(Vector3 pos, float chunkSize, Vector2Int numChunks)
-		{
-			var chunks = new List<Vector2Int>();
-
-			Vector2Int centerChunk = GetChunk(pos, chunkSize);
-			for (int i0 = 0; i0 < 3; ++i0)
-			{
-				int y = centerChunk.y - 1 + i0;
-				if (y >= 0 && y <= numChunks.y)
-				{
-					for (int i1 = 0; i1 < 3; ++i1)
-					{
-						int x = centerChunk.x - 1 + i1;
-						if (x >= 0 && x <= numChunks.x)
-						{
-							chunks.Add(new Vector2Int(x, y));
-						}
-					}
-				}
-			}
-
-			return chunks;
-		}
-
 		/**
 		 * フィールドの座標リストを接続クラスに変えてリストにする
 		 */
@@ -204,7 +180,7 @@ namespace FieldGenerator
 			for(int i0 = 0; i0 < pointList.Count; ++i0)
 			{
 				FieldConnectPoint currentPoint = pointList[ i0];
-				List<Vector2Int> chunks = GetChunksAround(currentPoint.Position, chunkSize, numChunks);
+				List<Vector2Int> chunks = GetCandidateChunks(currentPoint.Position, chunkSize, numChunks, interval);
 				var targetPoints = new List<FieldConnectPoint>();
 				for (int i1 = 0; i1 < chunks.Count; ++i1)
 				{
@@ -333,6 +309,41 @@ namespace FieldGenerator
 					pointList.RemoveAt( i0);
 				}
 			}
+		}
+
+		List<Vector2Int> GetCandidateChunks(Vector3 pos, float chunkSize, Vector2Int numChunks, float interval)
+		{
+			var candidates = new List<Vector2Int>();
+
+			Vector2Int chunk = GetChunk(pos, chunkSize);
+			var chunkRect = new Rect();
+			chunkRect.xMin = chunkSize * chunk.x;
+			chunkRect.xMax = chunkRect.xMin + chunkSize;
+			chunkRect.yMin = chunkSize * chunk.y;
+			chunkRect.yMax = chunkRect.yMin + chunkSize;
+
+			int sx = pos.x - chunkRect.xMin > interval ? 0 : -1;
+			int ex = chunkRect.xMax - pos.x > interval ? 0 : 1;
+			int sy = pos.y - chunkRect.yMin > interval ? 0 : -1;
+			int ey = chunkRect.yMax - pos.y > interval ? 0 : 1;
+
+			for (int i0 = sy; i0 <= ey; ++i0)
+			{
+				int y = chunk.y + i0;
+				if (y >= 0 && y <= numChunks.y)
+				{
+					for (int i1 = sx; i1 <= ex; ++i1)
+					{
+						int x = chunk.x + i1;
+						if (x >= 0 && x <= numChunks.x)
+						{
+							candidates.Add(new Vector2Int(x, y));
+						}
+					}
+				}
+			}
+
+			return candidates;
 		}
 
 		bool NextBlockCheck( Vector3 pos, float ofsetSize, float halfSize)
