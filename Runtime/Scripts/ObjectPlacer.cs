@@ -25,10 +25,10 @@ namespace FieldGenerator
 				int randomIndex = random.Next(count);
 				List<Vector3> points = copyAreas[randomIndex].AreaPoints;
 				Vector3 center = CalcCenter(points);
-				WeightedObject wo = DetectWeightedRandom(parameter.weightedPrefabs);
-				if (wo != null)
+				WeightedObject weightedObject = DetectWeightedRandom(parameter.weightedPrefabs);
+				if (weightedObject != null)
 				{
-					GameObject prefab = wo.gameObject;
+					GameObject prefab = weightedObject.gameObject;
 
 					if (prefab == null)
 					{
@@ -46,10 +46,10 @@ namespace FieldGenerator
 					obj.name = $"{prefabName}{objectCountMap[prefabName]}";
 					++objectCountMap[prefabName];
 					Vector3 prefabScale = prefab.transform.localScale;
-					float heightScale = Mathf.Lerp(wo.minHeightScale, wo.maxHeightScale, (float)random.NextDouble());
-					float horizontalScale = Mathf.Lerp(wo.minHorizontalScale, wo.maxHorizontalScale, (float)random.NextDouble());
+					float heightScale = Mathf.Lerp(weightedObject.minHeightScale, weightedObject.maxHeightScale, (float)random.NextDouble());
+					float horizontalScale = Mathf.Lerp(weightedObject.minHorizontalScale, weightedObject.maxHorizontalScale, (float)random.NextDouble());
 					transform.localScale = new Vector3(prefabScale.x * horizontalScale, prefabScale.y * heightScale, prefabScale.z * horizontalScale);
-					if (wo.rotatable != false)
+					if (weightedObject.rotatable != false)
 					{
 						float angle = 360.0f * (float)random.NextDouble();
 						transform.Rotate(0, angle, 0);
@@ -81,7 +81,7 @@ namespace FieldGenerator
 
 		WeightedObject DetectWeightedRandom(WeightedObject[] weightedPrefabs)
 		{
-			WeightedObject ret = null;
+			WeightedObject weightedObject = null;
 
 			float totalWeight = 0;
 			for (int i0 = 0; i0 < weightedPrefabs.Length; ++i0)
@@ -98,7 +98,7 @@ namespace FieldGenerator
 				{
 					if (border <= weight)
 					{
-						ret = weightedPrefabs[i0];
+						weightedObject = weightedPrefabs[i0];
 						break;
 					}
 
@@ -106,7 +106,7 @@ namespace FieldGenerator
 				}
 			}
 
-			return ret;
+			return weightedObject;
 		}
 
 		System.Random random;

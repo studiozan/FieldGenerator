@@ -160,19 +160,19 @@ namespace FieldGenerator
 				if (i0 != baseIndex)
 				{
 					FieldConnectPoint point = connectedPoints[i0];
-					Vector3 v = (point.Position - origin.Position).normalized;
-					float cross = Vector3.Cross(baseVec, v).y;
+					Vector3 dir = (point.Position - origin.Position).normalized;
+					float cross = Vector3.Cross(baseVec, dir).y;
 					if (cross < 0)
 					{
 						cross = Mathf.Abs(cross);
-						if (Vector3.Cross(left, v).y < 0)
+						if (Vector3.Cross(left, dir).y < 0)
 						{
 							cross = 2 - cross;
 						}
 					}
 					else
 					{
-						if (Vector3.Cross(left, v).y < 0)
+						if (Vector3.Cross(left, dir).y < 0)
 						{
 							cross += 2;
 						}
@@ -210,13 +210,13 @@ namespace FieldGenerator
 			{
 				if (i0 != baseIndex)
 				{
-					Vector3 v = points[i0] - originPos;
-					v.Normalize();
-					float cross1 = Vector3.Cross(baseVec, v).y;
+					Vector3 dir = points[i0] - originPos;
+					dir.Normalize();
+					float cross1 = Vector3.Cross(baseVec, dir).y;
 					//右
 					if (cross1 >= 0)
 					{
-						float cross2 = Vector3.Cross(right, v).y;
+						float cross2 = Vector3.Cross(right, dir).y;
 						if (cross2 <= 0)
 						{
 							rightUp.Add(new KeyValuePair<int, float>(i0, cross2));
@@ -229,7 +229,7 @@ namespace FieldGenerator
 					//左
 					else
 					{
-						float cross2 = Vector3.Cross(left, v).y;
+						float cross2 = Vector3.Cross(left, dir).y;
 						if (cross2 <= 0)
 						{
 							leftDown.Add(new KeyValuePair<int, float>(i0, cross2));
@@ -273,13 +273,13 @@ namespace FieldGenerator
 			{
 				if (i0 != baseIndex)
 				{
-					Vector3 v = points[i0].Position - originPos;
-					v.Normalize();
-					float cross1 = Vector3.Cross(baseVec, v).y;
+					Vector3 dir = points[i0].Position - originPos;
+					dir.Normalize();
+					float cross1 = Vector3.Cross(baseVec, dir).y;
 					//右
 					if (cross1 >= 0)
 					{
-						float cross2 = Vector3.Cross(right, v).y;
+						float cross2 = Vector3.Cross(right, dir).y;
 						if (cross2 <= 0)
 						{
 							rightUp.Add(new KeyValuePair<int, float>(i0, cross2));
@@ -292,7 +292,7 @@ namespace FieldGenerator
 					//左
 					else
 					{
-						float cross2 = Vector3.Cross(left, v).y;
+						float cross2 = Vector3.Cross(left, dir).y;
 						if (cross2 <= 0)
 						{
 							leftDown.Add(new KeyValuePair<int, float>(i0, cross2));
@@ -434,12 +434,12 @@ namespace FieldGenerator
 			return connection.GetSugorokuConnectPointList();
 		}
 
-		public River River
+		public RiverGenerator River
 		{
 			get => river;
 		}
 
-		public Road Road
+		public RoadGenerator Road
 		{
 			get => road;
 		}
@@ -471,8 +471,8 @@ namespace FieldGenerator
 		System.DateTime lastInterruptionTime;
 		FieldPointParameter parameter;
 
-		River river = new River();
-		Road road = new Road();
+		RiverGenerator river = new RiverGenerator();
+		RoadGenerator road = new RoadGenerator();
 
 		List<FieldPoint> fieldPoints = new List<FieldPoint>();
 		PointConnection connection = new PointConnection();

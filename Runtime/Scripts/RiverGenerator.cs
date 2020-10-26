@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace FieldGenerator
 {
-	public class River
+	public class RiverGenerator
 	{
 		public void Generate(RiverParameter parameter, System.Random random)
 		{
@@ -43,16 +43,16 @@ namespace FieldGenerator
 			{
 				if (pointLevels[i0 + 1] - pointLevels[i0] == 1)
 				{
-					Vector3 v1, v2, v3, v4;
-					v1 = leftRightPoints[i0][0];
-					v2 = leftRightPoints[i0 + 1][0];
-					v3 = leftRightPoints[i0 + 1][1];
-					v4 = leftRightPoints[i0][1];
+					Vector3 point1, point2, point3, point4;
+					point1 = leftRightPoints[i0][0];
+					point2 = leftRightPoints[i0 + 1][0];
+					point3 = leftRightPoints[i0 + 1][1];
+					point4 = leftRightPoints[i0][1];
 					Vector2Int chunk1, chunk2, chunk3, chunk4;
-					chunk1 = GetChunk(v1);
-					chunk2 = GetChunk(v2);
-					chunk3 = GetChunk(v3);
-					chunk4 = GetChunk(v4);
+					chunk1 = GetChunk(point1);
+					chunk2 = GetChunk(point2);
+					chunk3 = GetChunk(point3);
+					chunk4 = GetChunk(point4);
 					var chunks = new List<Vector2Int>();
 					chunks.Add(chunk1);
 					if (chunk2 != chunk1)
@@ -77,7 +77,7 @@ namespace FieldGenerator
 							quadrangles = new List<Vector3[]>();
 							quadranglesMap.Add(chunk, quadrangles);
 						}
-						quadrangles.Add(new Vector3[] { v1, v2, v3, v4 });
+						quadrangles.Add(new Vector3[] { point1, point2, point3, point4 });
 					}
 				}
 			}
@@ -177,7 +177,7 @@ namespace FieldGenerator
 			}
 		}
 
-		bool TryGetAbsorptionPoint(Vector3 s1, Vector3 e1, Vector2Int chunk, float distance, out RiverPoint absorptionPoint)
+		bool TryGetAbsorptionPoint(Vector3 startPos, Vector3 endPos, Vector2Int chunk, float distance, out RiverPoint absorptionPoint)
 		{
 			bool foundPoint = false;
 			absorptionPoint = null;
@@ -198,11 +198,11 @@ namespace FieldGenerator
 					{
 						RiverPoint prevPoint = prevPoints[i1];
 						Vector3 prevPos = prevPoint.Position;
-						if (IsIntersectingLineSegment(s1, e1, prevPos, currentPos) != false)
+						if (IsIntersectingLineSegment(startPos, endPos, prevPos, currentPos) != false)
 						{
 							isIntersecting = true;
 							foundPoint = true;
-							TryGetIntersection(s1, e1, prevPos, currentPos, out intersection);
+							TryGetIntersection(startPos, endPos, prevPos, currentPos, out intersection);
 							float dist1 = (prevPos - intersection).sqrMagnitude;
 							float dist2 = (currentPos - intersection).sqrMagnitude;
 							absorptionPoint = dist1 < dist2 ? prevPoint : currentPoint;
@@ -210,8 +210,8 @@ namespace FieldGenerator
 						}
 						else
 						{
-							float dist1 = (prevPos - e1).sqrMagnitude;
-							float dist2 = (currentPos - e1).sqrMagnitude;
+							float dist1 = (prevPos - endPos).sqrMagnitude;
+							float dist2 = (currentPos - endPos).sqrMagnitude;
 							if (dist1 < nearestPoint.Key)
 							{
 								nearestPoint = new KeyValuePair<float, RiverPoint>(dist1, prevPoint);
@@ -229,11 +229,11 @@ namespace FieldGenerator
 					{
 						RiverPoint nextPoint = nextPoints[i1];
 						Vector3 nextPos = nextPoint.Position;
-						if (IsIntersectingLineSegment(s1, e1, currentPos, nextPos) != false)
+						if (IsIntersectingLineSegment(startPos, endPos, currentPos, nextPos) != false)
 						{
 							isIntersecting = true;
 							foundPoint = true;
-							TryGetIntersection(s1, e1, currentPos, nextPos, out intersection);
+							TryGetIntersection(startPos, endPos, currentPos, nextPos, out intersection);
 							float dist1 = (currentPos - intersection).sqrMagnitude;
 							float dist2 = (nextPos - intersection).sqrMagnitude;
 							absorptionPoint = dist1 < dist2 ? currentPoint : nextPoint;
@@ -241,8 +241,8 @@ namespace FieldGenerator
 						}
 						else
 						{
-							float dist1 = (currentPos - e1).sqrMagnitude;
-							float dist2 = (nextPos - e1).sqrMagnitude;
+							float dist1 = (currentPos - endPos).sqrMagnitude;
+							float dist2 = (nextPos - endPos).sqrMagnitude;
 							if (dist1 < nearestPoint.Key)
 							{
 								nearestPoint = new KeyValuePair<float, RiverPoint>(dist1, currentPoint);
@@ -299,24 +299,24 @@ namespace FieldGenerator
 			}
 		}
 
-		bool IsIntersectingLineSegment(Vector3 s1, Vector3 e1, Vector3 s2, Vector3 e2)
+		bool IsIntersectingLineSegment(Vector3 startPos1, Vector3 endPos1, Vector3 startPos2, Vector3 endPos2)
 		{
 			bool isIntersecting = false;
 
-			Vector3 dir = e1 - s1;
-			Vector3 v1 = s2 - s1;
-			Vector3 v2 = e2 - s1;
+			Vector3 baseVec = endPos1 - startPos1;
+			Vector3 dir1 = startPos2 - startPos1;
+			Vector3 dir2 = endPos2 - startPos1;
 
-			float cross1 = Vector3.Cross(dir, v1).y;
-			float cross2 = Vector3.Cross(dir, v2).y;
+			float cross1 = Vector3.Cross(baseVec, dir1).y;
+			float cross2 = Vector3.Cross(baseVec, dir2).y;
 			if (cross1 * cross2 < 0)
 			{
-				dir = e2 - s2;
-				v1 = s1 - s2;
-				v2 = e1 - s2;
+				baseVec = endPos2 - startPos2;
+				dir1 = startPos1 - startPos2;
+				dir2 = endPos1 - startPos2;
 
-				cross1 = Vector3.Cross(dir, v1).y;
-				cross2 = Vector3.Cross(dir, v2).y;
+				cross1 = Vector3.Cross(baseVec, dir1).y;
+				cross2 = Vector3.Cross(baseVec, dir2).y;
 				if (cross1 * cross2 < 0)
 				{
 					isIntersecting = true;
@@ -326,24 +326,24 @@ namespace FieldGenerator
 			return isIntersecting;
 		}
 
-		bool TryGetIntersection(Vector3 s1, Vector3 e1, Vector3 s2, Vector3 e2, out Vector3 intersection)
+		bool TryGetIntersection(Vector3 startPos1, Vector3 endPos1, Vector3 startPos2, Vector3 endPos2, out Vector3 intersection)
 		{
 			bool isIntersecting = false;
 			intersection = Vector3.zero;
 
-			Vector3 v1 = e1 - s1;
-			Vector3 v2 = s2 - s1;
-			Vector3 v3 = s1 - e2;
-			Vector3 v4 = e2 - s2;
+			Vector3 dir1 = endPos1 - startPos1;
+			Vector3 dir2 = startPos2 - startPos1;
+			Vector3 dir3 = startPos1 - endPos2;
+			Vector3 dir4 = endPos2 - startPos2;
 
-			float area1 = Vector3.Cross(v1, v2).y * 0.5f;
-			float area2 = Vector3.Cross(v1, v3).y * 0.5f;
+			float area1 = Vector3.Cross(dir1, dir2).y * 0.5f;
+			float area2 = Vector3.Cross(dir1, dir3).y * 0.5f;
 			float area = area1 + area2;
 
 			if (Mathf.Approximately(area, 0) == false)
 			{
 				isIntersecting = true;
-				intersection = s2 + v4 * area1 / area;
+				intersection = startPos2 + dir4 * area1 / area;
 			}
 
 			return isIntersecting;

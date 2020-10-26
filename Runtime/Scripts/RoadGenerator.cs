@@ -4,9 +4,9 @@ using UnityEngine;
 
 namespace FieldGenerator
 {
-	public class Road
+	public class RoadGenerator
 	{
-		public void Generate(RoadParameter parameter, River river, System.Random random)
+		public void Generate(RoadParameter parameter, RiverGenerator river, System.Random random)
 		{
 			lastInterruptionTime = System.DateTime.Now;
 			this.parameter = parameter;
@@ -168,41 +168,47 @@ namespace FieldGenerator
 					int tensPlace = random.Next(9);
 					float angle = (float)(tensPlace * 10);
 					Quaternion rotation = Quaternion.Euler(0, angle, 0);
-					Vector3 p1, p2;
+					Vector3 pos1, pos2;
 					if (tensPlace == 0)
 					{
-						p1 = new Vector3(center.x, 0, chunkRect.y);
-						p2 = new Vector3(center.x, 0, chunkRect.y + chunkRect.height);
+						pos1 = new Vector3(center.x, 0, chunkRect.y);
+						pos2 = new Vector3(center.x, 0, chunkRect.y + chunkRect.height);
 					}
 					else
 					{
 						Vector3 normDir = rotation * Vector3.forward;
-						float a = normDir.z / normDir.x;
-						float b = center.z - a * center.x;
-						float y1 = chunkRect.y;
-						float x1 = (y1 - b) / a;
-						if (x1 < chunkRect.x)
-						{
-							x1 = chunkRect.x;
-							y1 = a * x1 + b;
-						}
-						p1 = new Vector3(x1, 0, y1);
 
-						float y2 = chunkRect.y + chunkRect.height;
-						float x2 = (y2 - b) / a;
-						if (x2 > chunkRect.x + chunkRect.width)
+						Vector3 start1;
+						Vector3 end1;
+						Vector3 start2;
+						Vector3 end2;
+
+						if (tensPlace <= 4)
 						{
-							x2 = chunkRect.x + chunkRect.width;
-							y2 = a * x2 + b;
+							start1 = new Vector3(chunkRect.xMin, 0, chunkRect.yMin);
+							end1 = new Vector3(chunkRect.xMax, 0, chunkRect.yMin);
+
+							start2 = new Vector3(chunkRect.xMin, 0, chunkRect.yMax);
+							end2 = new Vector3(chunkRect.xMax, 0, chunkRect.yMax);
 						}
-						p2 = new Vector3(x2, 0, y2);
+						else
+						{
+							start1 = new Vector3(chunkRect.xMin, 0, chunkRect.yMin);
+							end1 = new Vector3(chunkRect.xMin, 0, chunkRect.yMax);
+
+							start2 = new Vector3(chunkRect.xMax, 0, chunkRect.yMin);
+							end2 = new Vector3(chunkRect.xMax, 0, chunkRect.yMax);
+						}
+
+						TryGetIntersection(center, center + normDir, start1, end1, out pos1);
+						TryGetIntersection(center, center + normDir, start2, end2, out pos2);
 					}
 
-					if (river.Covers(p1) == false)
+					if (river.Covers(pos1) == false)
 					{
 						var point1 = new FieldPoint
 						{
-							Position = p1,
+							Position = pos1,
 							Type = PointType.kIntersectionOfGridRoadAndDistrictRoad,
 						};
 						if (AddIfAway(point1, thinningDistance) != false)
@@ -210,11 +216,11 @@ namespace FieldGenerator
 							gridRoadPoints.Add(point1);
 						}
 					}
-					if (river.Covers(p2) == false)
+					if (river.Covers(pos2) == false)
 					{
 						var point2 = new FieldPoint
 						{
-							Position = p2,
+							Position = pos2,
 							Type = PointType.kIntersectionOfGridRoadAndDistrictRoad,
 						};
 						if (AddIfAway(point2, thinningDistance) != false)
@@ -224,7 +230,7 @@ namespace FieldGenerator
 					}
 
 					//base---------------------------------------------------------------
-					Vector3 dir = p2 - p1;
+					Vector3 dir = pos2 - pos1;
 					float maxLength = (Quaternion.Euler(0, -angle, 0) * dir).z;
 					float width = parameter.Width;
 					float spacing = parameter.Spacing;
@@ -252,7 +258,7 @@ namespace FieldGenerator
 					{
 						Vector3 pos = basePoints[i0];
 						pos.z += offsetZ;
-						pos = rotation * pos + p1;
+						pos = rotation * pos + pos1;
 						basePoints[i0] = pos;
 						if (river.Covers(pos) == false)
 						{
@@ -278,37 +284,37 @@ namespace FieldGenerator
 
 						//left------------------------
 						var leftPoints = new List<FieldPoint>();
-						Vector3 leftPoint = leftRot * roadStep + basePoint;
-						while (IsInsideRect(chunkRect, leftPoint) != false)
+						Vector3 leftPos = leftRot * roadStep + basePoint;
+						while (IsInsideRect(chunkRect, leftPos) != false)
 						{
-							if (river.Covers(leftPoint) == false)
+							if (river.Covers(leftPos) == false)
 							{
-								var lp = new FieldPoint
+								var leftPoint = new FieldPoint
 								{
-									Position = leftPoint,
+									Position = leftPos,
 									Type = PointType.kGridRoad,
 								};
-								if (AddIfAway(lp, thinningDistance) != false)
+								if (AddIfAway(leftPoint, thinningDistance) != false)
 								{
-									leftPoints.Add(lp);
+									leftPoints.Add(leftPoint);
 								}
 							}
-							leftPoint = leftRot * roadStep + leftPoint;
+							leftPos = leftRot * roadStep + leftPos;
 						}
-						Vector3 lastLeftPoint;
+						Vector3 lastLeftPos;
 						if (leftPoints.Count > 0)
 						{
-							lastLeftPoint = leftPoints[leftPoints.Count - 1].Position;
+							lastLeftPos = leftPoints[leftPoints.Count - 1].Position;
 						}
 						else
 						{
-							lastLeftPoint = leftPoint;
+							lastLeftPos = leftPos;
 						}
-						float zl = lastLeftPoint.z - basePoint.z;
+						float zl = lastLeftPos.z - basePoint.z;
 						if (Mathf.Approximately(zl, 0) == false)
 						{
-							float al = zl / (lastLeftPoint.x - basePoint.x);
-							float bl = lastLeftPoint.z - al * lastLeftPoint.x;
+							float al = zl / (lastLeftPos.x - basePoint.x);
+							float bl = lastLeftPos.z - al * lastLeftPos.x;
 							var leftIntersection = new Vector3();
 							leftIntersection.x = chunkRect.x;
 							leftIntersection.z = al * leftIntersection.x + bl;
@@ -318,14 +324,14 @@ namespace FieldGenerator
 							Vector3 intersectionL = leftIntersection.x >= upIntersection.x ? leftIntersection : upIntersection;
 							if (river.Covers(intersectionL) == false)
 							{
-								var lp = new FieldPoint
+								var leftPoint = new FieldPoint
 								{
 									Position = intersectionL,
 									Type = PointType.kIntersectionOfGridRoadAndDistrictRoad,
 								};
-								if (AddIfAway(lp, thinningDistance) != false)
+								if (AddIfAway(leftPoint, thinningDistance) != false)
 								{
-									leftPoints.Add(lp);
+									leftPoints.Add(leftPoint);
 								}
 							}
 						}
@@ -334,14 +340,14 @@ namespace FieldGenerator
 							var pos = new Vector3(0, 0, basePoint.z);
 							if (river.Covers(pos) == false)
 							{
-								var lp = new FieldPoint
+								var leftPoint = new FieldPoint
 								{
 									Position = pos,
 									Type = PointType.kIntersectionOfGridRoadAndDistrictRoad,
 								};
-								if (AddIfAway(lp, thinningDistance) != false)
+								if (AddIfAway(leftPoint, thinningDistance) != false)
 								{
-									leftPoints.Add(lp);
+									leftPoints.Add(leftPoint);
 								}
 							}
 						}
@@ -350,37 +356,37 @@ namespace FieldGenerator
 
 						//right-----------------------
 						var rightPoints = new List<FieldPoint>();
-						Vector3 rightPoint = rightRot * roadStep + basePoint;
-						while (IsInsideRect(chunkRect, rightPoint) != false)
+						Vector3 rightPos = rightRot * roadStep + basePoint;
+						while (IsInsideRect(chunkRect, rightPos) != false)
 						{
-							if (river.Covers(rightPoint) == false)
+							if (river.Covers(rightPos) == false)
 							{
-								var rp = new FieldPoint
+								var rightPoint = new FieldPoint
 								{
-									Position = rightPoint,
+									Position = rightPos,
 									Type = PointType.kGridRoad
 								};
-								if (AddIfAway(rp, thinningDistance) != false)
+								if (AddIfAway(rightPoint, thinningDistance) != false)
 								{
-									rightPoints.Add(rp);
+									rightPoints.Add(rightPoint);
 								}
 							}
-							rightPoint = rightRot * roadStep + rightPoint;
+							rightPos = rightRot * roadStep + rightPos;
 						}
-						Vector3 lastRightPoint;
+						Vector3 lastRightPos;
 						if (rightPoints.Count > 0)
 						{
-							lastRightPoint = rightPoints[rightPoints.Count - 1].Position;
+							lastRightPos = rightPoints[rightPoints.Count - 1].Position;
 						}
 						else
 						{
-							lastRightPoint = rightPoint;
+							lastRightPos = rightPos;
 						}
-						float zr = lastRightPoint.z - basePoint.z;
+						float zr = lastRightPos.z - basePoint.z;
 						if (Mathf.Approximately(zr, 0) == false)
 						{
-							float ar = zr / (lastRightPoint.x - basePoint.x);
-							float br = lastRightPoint.z - ar * lastRightPoint.x;
+							float ar = zr / (lastRightPos.x - basePoint.x);
+							float br = lastRightPos.z - ar * lastRightPos.x;
 							var rightIntersection = new Vector3();
 							rightIntersection.x = chunkRect.x + chunkRect.width;
 							rightIntersection.z = ar * rightIntersection.x + br;
@@ -390,14 +396,14 @@ namespace FieldGenerator
 							Vector3 intersectionR = rightIntersection.x <= downIntersection.x ? rightIntersection : downIntersection;
 							if (river.Covers(intersectionR) == false)
 							{
-								var rp = new FieldPoint
+								var rightPoint = new FieldPoint
 								{
 									Position = intersectionR,
 									Type = PointType.kIntersectionOfGridRoadAndDistrictRoad
 								};
-								if (AddIfAway(rp, thinningDistance) != false)
+								if (AddIfAway(rightPoint, thinningDistance) != false)
 								{
-									rightPoints.Add(rp);
+									rightPoints.Add(rightPoint);
 								}
 							}
 						}
@@ -406,14 +412,14 @@ namespace FieldGenerator
 							var pos = new Vector3(chunkSize, 0, basePoint.z);
 							if (river.Covers(pos) == false)
 							{
-								var rp = new FieldPoint
+								var rightPoint = new FieldPoint
 								{
 									Position = pos,
 									Type = PointType.kIntersectionOfGridRoadAndDistrictRoad,
 								};
-								if (AddIfAway(rp, thinningDistance) != false)
+								if (AddIfAway(rightPoint, thinningDistance) != false)
 								{
-									rightPoints.Add(rp);
+									rightPoints.Add(rightPoint);
 								}
 							}
 						}
@@ -422,6 +428,29 @@ namespace FieldGenerator
 					}
 				}
 			}
+		}
+
+		bool TryGetIntersection(Vector3 startPos1, Vector3 endPos1, Vector3 startPos2, Vector3 endPos2, out Vector3 intersection)
+		{
+			bool isIntersecting = false;
+			intersection = Vector3.zero;
+
+			Vector3 dir1 = endPos1 - startPos1;
+			Vector3 dir2 = startPos2 - startPos1;
+			Vector3 dir3 = startPos1 - endPos2;
+			Vector3 dir4 = endPos2 - startPos2;
+
+			float area1 = Vector3.Cross(dir1, dir2).y * 0.5f;
+			float area2 = Vector3.Cross(dir1, dir3).y * 0.5f;
+			float area = area1 + area2;
+
+			if (Mathf.Approximately(area, 0) == false)
+			{
+				isIntersecting = true;
+				intersection = startPos2 + dir4 * area1 / area;
+			}
+
+			return isIntersecting;
 		}
 
 		bool IsInsideRect(Rect rect, Vector3 pos)
@@ -530,7 +559,7 @@ namespace FieldGenerator
 		List<FieldPoint> points = new List<FieldPoint>();
 		Dictionary<Vector2Int, List<FieldPoint>> pointMap = new Dictionary<Vector2Int, List<FieldPoint>>();
 		RoadParameter parameter;
-		River river;
+		RiverGenerator river;
 
 		List<FieldPoint> districtRoadPoints = new List<FieldPoint>();
 		List<FieldPoint> roadAlongRiverPoints = new List<FieldPoint>();
