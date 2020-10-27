@@ -105,216 +105,76 @@ namespace FieldGenerator
 
 				for (int i1 = 0; i1 < connectedPoints.Count; ++i1)
 				{
-					var areaPoints = new List<FieldConnectPoint>();
-					areaPoints.Add(point);
-					FieldConnectPoint currentPoint = connectedPoints[i1];
-					areaPoints.Add(currentPoint);
-					FieldConnectPoint prevPoint = point;
-					bool foundArea = false;
-					for (int i2 = 0; i2 < 3; ++i2)
+					FieldConnectPoint connectedPoint = connectedPoints[i1];
+					List<FieldConnectPoint> candidates = connectedPoint.ConnectionList;
+					for (int i2 = i1 + 1; i2 < connectedPoints.Count; ++i2)
 					{
-						FieldConnectPoint nextPoint = GetLastClockwisePoint(currentPoint, currentPoint.ConnectionList.FindIndex(p => p.Index == prevPoint.Index));
-						if (nextPoint.Index == prevPoint.Index)
+						FieldConnectPoint connectedPoint2 = connectedPoints[i2];
+						if (candidates.Contains(connectedPoint2) == false)
 						{
-							break;
-						}
-
-						if (nextPoint.Index == point.Index)
-						{
-							foundArea = true;
-							break;
-						}
-
-						areaPoints.Add(nextPoint);
-						prevPoint = currentPoint;
-						currentPoint = nextPoint;
-					}
-
-					if (foundArea != false && areaPoints.Count == 4)
-					{
-						if (IsExistCombination(areaPoints) == false)
-						{
-							AddCombination(areaPoints);
-							float amountInwardMovement = Mathf.Lerp(parameter.minAmountInwardMovement, parameter.maxAmountInwardMovement, (float)random.NextDouble());
-							List<Vector3> innerPoints = InnerArea(areaPoints, amountInwardMovement);
-							Vector3 center = CalcCenter(innerPoints);
-							List<Vector3> clockwise = SortClockwise(center, innerPoints, 0);
-							areas.Add(new SurroundedArea { AreaPoints = clockwise });
+							List<FieldConnectPoint> candidates2 = connectedPoint2.ConnectionList;
+							for (int i3 = 0; i3 < candidates.Count; ++i3)
+							{
+								FieldConnectPoint candidate = candidates[i3];
+								if (candidate.Index != point.Index && candidates2.Contains(candidate) != false)
+								{
+									var areaPoints = new List<FieldConnectPoint>
+									{
+										point, connectedPoint, candidate, connectedPoint2,
+									};
+									if (IsExistCombination(areaPoints) == false)
+									{
+										AddCombination(areaPoints);
+										if (connectedPoints.Contains(candidate) == false)
+										{
+											float amountInwardMovement = Mathf.Lerp(parameter.minAmountInwardMovement, parameter.maxAmountInwardMovement, (float)random.NextDouble());
+											List<Vector3> innerPoints = InnerArea(areaPoints, amountInwardMovement);
+											Vector3 center = CalcCenter(innerPoints);
+											List<Vector3> clockwise = SortClockwise(center, innerPoints, 0);
+											areas.Add(new SurroundedArea { AreaPoints = clockwise });
+										}
+									}
+								}
+							}
 						}
 					}
 				}
 			}
-		}
-
-		FieldConnectPoint GetLastClockwisePoint(FieldConnectPoint origin, int baseIndex)
-		{
-			int index = baseIndex;
-			float minCross = float.MaxValue;
-
-			List<FieldConnectPoint> connectedPoints = origin.ConnectionList;
-			Vector3 baseVec = (connectedPoints[baseIndex].Position - origin.Position).normalized;
-			var left = new Vector3(-baseVec.z, 0, baseVec.x);
-
-			for (int i0 = 0; i0 < connectedPoints.Count; ++i0)
-			{
-				if (i0 != baseIndex)
-				{
-					FieldConnectPoint point = connectedPoints[i0];
-					Vector3 dir = (point.Position - origin.Position).normalized;
-					float cross = Vector3.Cross(baseVec, dir).y;
-					if (cross < 0)
-					{
-						cross = Mathf.Abs(cross);
-						if (Vector3.Cross(left, dir).y < 0)
-						{
-							cross = 2 - cross;
-						}
-					}
-					else
-					{
-						if (Vector3.Cross(left, dir).y < 0)
-						{
-							cross += 2;
-						}
-						else
-						{
-							cross = 4 - cross;
-						}
-					}
-
-					if (cross < minCross)
-					{
-						minCross = cross;
-						index = i0;
-					}
-				}
-			}
-
-			return connectedPoints[index];
 		}
 
 		List<Vector3> SortClockwise(Vector3 originPos, List<Vector3> points, int baseIndex)
 		{
 			var clockwise = new List<Vector3>();
 
-			var rightUp = new List<KeyValuePair<int, float>>();
-			var rightDown = new List<KeyValuePair<int, float>>();
-			var leftDown = new List<KeyValuePair<int, float>>();
-			var leftUp = new List<KeyValuePair<int, float>>();
-
-			Vector3 baseVec = points[baseIndex] - originPos;
-			baseVec.Normalize();
-			var right = new Vector3(baseVec.z, 0, -baseVec.x);
-			var left = new Vector3(-baseVec.z, 0, baseVec.x);
+			var angles = new List<float>();
+			Vector3 basePoint= points[baseIndex];
+			clockwise.Add(basePoint);
+			Vector3 baseDir = basePoint - originPos;
 			for (int i0 = 0; i0 < points.Count; ++i0)
 			{
 				if (i0 != baseIndex)
 				{
-					Vector3 dir = points[i0] - originPos;
-					dir.Normalize();
-					float cross1 = Vector3.Cross(baseVec, dir).y;
-					//右
-					if (cross1 >= 0)
+					Vector3 point = points[i0];
+					Vector3 dir = point - originPos;
+					float angle = Vector2.SignedAngle(new Vector2(baseDir.x, baseDir.z), new Vector2(dir.x, dir.z));
+					if (angle < 0)
 					{
-						float cross2 = Vector3.Cross(right, dir).y;
-						if (cross2 <= 0)
-						{
-							rightUp.Add(new KeyValuePair<int, float>(i0, cross2));
-						}
-						else
-						{
-							rightDown.Add(new KeyValuePair<int, float>(i0, cross2));
-						}
+						angle += 360;
 					}
-					//左
-					else
+					int insertIndex = 0;
+					while (insertIndex < angles.Count)
 					{
-						float cross2 = Vector3.Cross(left, dir).y;
-						if (cross2 <= 0)
+						if (angle < angles[insertIndex])
 						{
-							leftDown.Add(new KeyValuePair<int, float>(i0, cross2));
+							break;
 						}
-						else
-						{
-							leftUp.Add(new KeyValuePair<int, float>(i0, cross2));
-						}
+
+						++insertIndex;
 					}
+					angles.Insert(insertIndex, angle);
+					clockwise.Insert(insertIndex + 1, point);
 				}
 			}
-
-			rightUp.Sort((a, b) => a.Value.CompareTo(b.Value));
-			rightDown.Sort((a, b) => a.Value.CompareTo(b.Value));
-			leftDown.Sort((a, b) => a.Value.CompareTo(b.Value));
-			leftUp.Sort((a, b) => a.Value.CompareTo(b.Value));
-
-			clockwise.Add(points[baseIndex]);
-			clockwise.AddRange(rightUp.ConvertAll<Vector3>(pair => points[pair.Key]));
-			clockwise.AddRange(rightDown.ConvertAll<Vector3>(pair => points[pair.Key]));
-			clockwise.AddRange(leftDown.ConvertAll<Vector3>(pair => points[pair.Key]));
-			clockwise.AddRange(leftUp.ConvertAll<Vector3>(pair => points[pair.Key]));
-
-			return clockwise;
-		}
-
-		List<FieldConnectPoint> SortClockwise(Vector3 originPos, List<FieldConnectPoint> points, int baseIndex)
-		{
-			var clockwise = new List<FieldConnectPoint>();
-
-			var rightUp = new List<KeyValuePair<int, float>>();
-			var rightDown = new List<KeyValuePair<int, float>>();
-			var leftDown = new List<KeyValuePair<int, float>>();
-			var leftUp = new List<KeyValuePair<int, float>>();
-
-			Vector3 baseVec = points[baseIndex].Position - originPos;
-			baseVec.Normalize();
-			var right = new Vector3(baseVec.z, 0, -baseVec.x);
-			var left = new Vector3(-baseVec.z, 0, baseVec.x);
-			for (int i0 = 0; i0 < points.Count; ++i0)
-			{
-				if (i0 != baseIndex)
-				{
-					Vector3 dir = points[i0].Position - originPos;
-					dir.Normalize();
-					float cross1 = Vector3.Cross(baseVec, dir).y;
-					//右
-					if (cross1 >= 0)
-					{
-						float cross2 = Vector3.Cross(right, dir).y;
-						if (cross2 <= 0)
-						{
-							rightUp.Add(new KeyValuePair<int, float>(i0, cross2));
-						}
-						else
-						{
-							rightDown.Add(new KeyValuePair<int, float>(i0, cross2));
-						}
-					}
-					//左
-					else
-					{
-						float cross2 = Vector3.Cross(left, dir).y;
-						if (cross2 <= 0)
-						{
-							leftDown.Add(new KeyValuePair<int, float>(i0, cross2));
-						}
-						else
-						{
-							leftUp.Add(new KeyValuePair<int, float>(i0, cross2));
-						}
-					}
-				}
-			}
-
-			rightUp.Sort((a, b) => a.Value.CompareTo(b.Value));
-			rightDown.Sort((a, b) => a.Value.CompareTo(b.Value));
-			leftDown.Sort((a, b) => a.Value.CompareTo(b.Value));
-			leftUp.Sort((a, b) => a.Value.CompareTo(b.Value));
-
-			clockwise.Add(points[baseIndex]);
-			clockwise.AddRange(rightUp.ConvertAll<FieldConnectPoint>(pair => points[pair.Key]));
-			clockwise.AddRange(rightDown.ConvertAll<FieldConnectPoint>(pair => points[pair.Key]));
-			clockwise.AddRange(leftDown.ConvertAll<FieldConnectPoint>(pair => points[pair.Key]));
-			clockwise.AddRange(leftUp.ConvertAll<FieldConnectPoint>(pair => points[pair.Key]));
 
 			return clockwise;
 		}
