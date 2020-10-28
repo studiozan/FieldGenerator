@@ -44,9 +44,9 @@ namespace FieldGenerator
 			SetFieldPoint();
 
 			/* 川を繋げる */
-			SetConnection( riverConnectPointList, riverInterval, chunkSize, numChunks, true);
+			SetConnection( riverConnectPointList, riverInterval * 1.5f, chunkSize, numChunks, true);
 			/* 道路を全て繋げる */
-			SetConnection( roadConnectPointList, interval, chunkSize, numChunks);
+			SetConnection( roadConnectPointList, interval * 1.5f, chunkSize, numChunks);
 			/* すごろくで使う道路を繋げる */
 			float power = sugorokuMergeMulti;
 			if( power < 1f)
@@ -56,7 +56,7 @@ namespace FieldGenerator
 			/* 外周から一定範囲の点を間引く処理 */
 			OuterPointThinning( sugorokuConnectPointList, sugorokuOfset);
 			FieldPointMerge( sugorokuConnectPointList, interval * power);
-			SetConnection( sugorokuConnectPointList, interval * ( power * 2f - 1f), chunkSize, numChunks, false);
+			SetConnection( sugorokuConnectPointList, interval * ( power * 2f - 1f) * 1.5f, chunkSize, numChunks, false);
 		}
 
 		Dictionary<Vector2Int, List<FieldConnectPoint>> CreatePointsMap(List<FieldConnectPoint> points, float chunkSize)
@@ -165,11 +165,17 @@ namespace FieldGenerator
 			float checkTheta = 0.707f;
 			var min = new float[ 4];
 			var no = new int[ 4];
-			float itv = interval * 1.5f;
-			itv = itv * itv;
+			float itv = interval * interval;
 			int randomCount = 0;
 
-			var pointsMap = CreatePointsMap(pointList, chunkSize);
+			float chunkSizeInternal = chunkSize;
+			Vector2Int numChunksInternal = numChunks;
+			if (interval <= chunkSize * 0.5f)
+			{
+				chunkSizeInternal = chunkSize * 0.5f;
+				numChunksInternal *= 2;
+			}
+			var pointsMap = CreatePointsMap(pointList, chunkSizeInternal);
 
 			var direction = new Vector3[ 4];
 			direction[ 0] = Vector3.forward;
@@ -180,7 +186,7 @@ namespace FieldGenerator
 			for(int i0 = 0; i0 < pointList.Count; ++i0)
 			{
 				FieldConnectPoint currentPoint = pointList[ i0];
-				List<Vector2Int> chunks = GetCandidateChunks(currentPoint.Position, chunkSize, numChunks, interval);
+				List<Vector2Int> chunks = GetCandidateChunks(currentPoint.Position, chunkSizeInternal, numChunksInternal, interval);
 				var targetPoints = new List<FieldConnectPoint>();
 				for (int i1 = 0; i1 < chunks.Count; ++i1)
 				{
