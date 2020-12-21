@@ -98,9 +98,15 @@ namespace FieldGenerator
 				roadConnectedPoints[i0].Index = i0;
 			}
 
-			for (int i0 = 0; i0 < roadConnectedPoints.Count; ++i0)
+			DetectSquareArea(roadConnectedPoints);
+			DetectPentagonArea(roadConnectedPoints);
+		}
+
+		void DetectSquareArea(List<FieldConnectPoint> roadPoints)
+		{
+			for (int i0 = 0; i0 < roadPoints.Count; ++i0)
 			{
-				FieldConnectPoint point = roadConnectedPoints[i0];
+				FieldConnectPoint point = roadPoints[i0];
 				List<FieldConnectPoint> connectedPoints = point.ConnectionList;
 
 				for (int i1 = 0; i1 < connectedPoints.Count; ++i1)
@@ -110,13 +116,13 @@ namespace FieldGenerator
 					for (int i2 = i1 + 1; i2 < connectedPoints.Count; ++i2)
 					{
 						FieldConnectPoint connectedPoint2 = connectedPoints[i2];
-						if (candidates.Contains(connectedPoint2) == false)
+						List<FieldConnectPoint> candidates2 = connectedPoint2.ConnectionList;
+						for (int i3 = 0; i3 < candidates.Count; ++i3)
 						{
-							List<FieldConnectPoint> candidates2 = connectedPoint2.ConnectionList;
-							for (int i3 = 0; i3 < candidates.Count; ++i3)
+							FieldConnectPoint candidate = candidates[i3];
+							if (candidate.Index != point.Index)
 							{
-								FieldConnectPoint candidate = candidates[i3];
-								if (candidate.Index != point.Index && candidates2.Contains(candidate) != false)
+								if (candidates2.Contains(candidate) != false)
 								{
 									var areaPoints = new List<FieldConnectPoint>
 									{
@@ -125,14 +131,90 @@ namespace FieldGenerator
 									if (IsExistCombination(areaPoints) == false)
 									{
 										AddCombination(areaPoints);
-										if (connectedPoints.Contains(candidate) == false)
+										int disconnectionIndex = candidates.FindIndex(p => p.Index == connectedPoint2.Index);
+										if (disconnectionIndex >= 0)
 										{
-											float amountInwardMovement = Mathf.Lerp(parameter.minAmountInwardMovement, parameter.maxAmountInwardMovement, (float)random.NextDouble());
-											List<Vector3> innerPoints = InnerArea(areaPoints, amountInwardMovement);
-											Vector3 center = CalcCenter(innerPoints);
-											List<Vector3> clockwise = SortClockwise(center, innerPoints, 0);
-											areas.Add(new SurroundedArea { AreaPoints = clockwise });
+											connectedPoint.Disconnection(disconnectionIndex);
+											disconnectionIndex = candidates2.FindIndex(p => p.Index == connectedPoint.Index);
+											if (disconnectionIndex >= 0)
+											{
+												connectedPoint2.Disconnection(disconnectionIndex);
+											}
 										}
+										disconnectionIndex = connectedPoints.FindIndex(p => p.Index == candidate.Index);
+										if (disconnectionIndex >= 0)
+										{
+											point.Disconnection(disconnectionIndex);
+											disconnectionIndex = candidate.ConnectionList.FindIndex(p => p.Index == point.Index);
+											if (disconnectionIndex >= 0)
+											{
+												candidate.Disconnection(disconnectionIndex);
+											}
+										}
+
+										AddArea(areaPoints);
+									}
+									break;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		void DetectPentagonArea(List<FieldConnectPoint> roadPoints)
+		{
+			for (int i0 = 0; i0 < roadPoints.Count; ++i0)
+			{
+				FieldConnectPoint point = roadPoints[i0];
+				List<FieldConnectPoint> connectedPoints = point.ConnectionList;
+
+				for (int i1 = 0; i1 < connectedPoints.Count; ++i1)
+				{
+					FieldConnectPoint connectedPoint = connectedPoints[i1];
+					List<FieldConnectPoint> candidates = connectedPoint.ConnectionList;
+					for (int i2 = i1 + 1; i2 < connectedPoints.Count; ++i2)
+					{
+						FieldConnectPoint connectedPoint2 = connectedPoints[i2];
+						List<FieldConnectPoint> candidates2 = connectedPoint2.ConnectionList;
+						if (candidates.Contains(connectedPoint2) == false)
+						{
+							bool detected = false;
+							for (int i3 = 0; i3 < candidates.Count; ++i3)
+							{
+								FieldConnectPoint candidate = candidates[i3];
+								if (candidate.Index != point.Index)
+								{
+									for (int i4 = 0; i4 < candidate.ConnectionList.Count; ++i4)
+									{
+										FieldConnectPoint candidate2 = candidate.ConnectionList[i4];
+										if (candidate2.Index != point.Index)
+										{
+											if (candidates2.Contains(candidate2) != false)
+											{
+												if (IsExistCombination(new[] { point, connectedPoint, candidate, candidate2 }) == false &&
+													IsExistCombination(new[] { point, connectedPoint, candidate, connectedPoint2 }) == false &&
+													IsExistCombination(new[] { point, connectedPoint, candidate2, connectedPoint2 }) == false &&
+													IsExistCombination(new[] { point, candidate, candidate2, connectedPoint2 }) == false &&
+													IsExistCombination(new[] { connectedPoint, candidate, candidate2, connectedPoint2 }) == false)
+												{
+													var pentagonAreaPoints = new List<FieldConnectPoint>() { point, connectedPoint, candidate, candidate2, connectedPoint2 };
+													if (IsExistCombination(pentagonAreaPoints) == false)
+													{
+														AddCombination(pentagonAreaPoints);
+														List<FieldConnectPoint> squarePoints = ConvertPentagonToSquare(pentagonAreaPoints);
+														AddArea(squarePoints);
+														detected = true;
+														break;
+													}
+												}
+											}
+										}
+									}
+									if (detected != false)
+									{
+										break;
 									}
 								}
 							}
@@ -140,6 +222,43 @@ namespace FieldGenerator
 					}
 				}
 			}
+		}
+
+		void AddArea(List<FieldConnectPoint> squarePoints)
+		{
+			float amountInwardMovement = Mathf.Lerp(parameter.minAmountInwardMovement, parameter.maxAmountInwardMovement, (float)random.NextDouble());
+			List<Vector3> areaPoints = InnerArea(squarePoints, amountInwardMovement);
+			Vector3 center = CalcCenter(areaPoints);
+			areaPoints = SortClockwise(center, areaPoints, 0);
+			areas.Add(new SurroundedArea { AreaPoints = areaPoints });
+		}
+
+		List<FieldConnectPoint> ConvertPentagonToSquare(IReadOnlyList<FieldConnectPoint> pentagonPoints)
+		{
+			float minDiagonalLength = float.MaxValue;
+			int minDiagonalIndex = 0;
+			for (int i0 = 0; i0 < pentagonPoints.Count; ++i0)
+			{
+				Vector3 start = pentagonPoints[i0].Position;
+				Vector3 end = pentagonPoints[(i0 + 2) % pentagonPoints.Count].Position;
+				float length = (end - start).sqrMagnitude;
+				if (length < minDiagonalLength)
+				{
+					minDiagonalLength = length;
+					minDiagonalIndex = (i0 + 1) % pentagonPoints.Count;
+				}
+			}
+
+			var squarePoints = new List<FieldConnectPoint>();
+			for (int i0 = 0; i0 < pentagonPoints.Count; ++i0)
+			{
+				if (i0 != minDiagonalIndex)
+				{
+					squarePoints.Add(pentagonPoints[i0]);
+				}
+			}
+
+			return squarePoints;
 		}
 
 		List<Vector3> SortClockwise(Vector3 originPos, List<Vector3> points, int baseIndex)
@@ -156,7 +275,7 @@ namespace FieldGenerator
 				{
 					Vector3 point = points[i0];
 					Vector3 dir = point - originPos;
-					float angle = Vector2.SignedAngle(new Vector2(baseDir.x, baseDir.z), new Vector2(dir.x, dir.z));
+					float angle = -Vector2.SignedAngle(new Vector2(baseDir.x, baseDir.z), new Vector2(dir.x, dir.z));
 					if (angle < 0)
 					{
 						angle += 360;
@@ -221,9 +340,9 @@ namespace FieldGenerator
 			return innerPoints;
 		}
 
-		bool IsExistCombination(List<FieldConnectPoint> points)
+		bool IsExistCombination(IReadOnlyList<FieldConnectPoint> points)
 		{
-			bool isExist = true;;
+			bool isExist = true;
 			for (int i0 = 0; i0 < points.Count; ++i0)
 			{
 				isExist = true;
